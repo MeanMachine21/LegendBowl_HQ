@@ -833,16 +833,16 @@
   .dp-column { flex: 1; min-width: 0; }
   .dp-column-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--amber); margin-bottom: 6px; }
   .dp-group { background: var(--lcd-bg); border-radius: 4px; margin-bottom: 6px; overflow: hidden; }
-  .dp-row { display: flex; align-items: center; gap: 3px; padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .dp-row { display: flex; align-items: center; gap: 2px; padding: 5px 6px; border-bottom: 1px solid rgba(255,255,255,0.03); }
   .dp-row:last-child { border-bottom: none; }
   .dp-row.dp-header { background: #0a1a0a; border-radius: 4px; margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; color: var(--muted); }
-  .dp-pos { flex: 0 0 34px; overflow: hidden; white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--amber); }
-  .dp-name { flex: 1 1 auto; min-width: 60px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .dp-stat { flex: 0 0 26px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; }
-  .dp-age { flex: 0 0 28px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
-  .dp-morale { flex: 0 0 24px; overflow: hidden; white-space: nowrap; text-align: center; font-size: 12px; }
-  .dp-sal { flex: 0 0 48px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
-  .dp-cnt { flex: 0 0 24px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dp-pos { flex: 0 0 28px; overflow: hidden; white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--amber); }
+  .dp-name { flex: 1 1 auto; min-width: 68px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dp-stat { flex: 0 0 22px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; }
+  .dp-age { flex: 0 0 24px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dp-morale { flex: 0 0 20px; overflow: hidden; white-space: nowrap; text-align: center; font-size: 12px; }
+  .dp-sal { flex: 0 0 42px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dp-cnt { flex: 0 0 20px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
   .hof-career-rank { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--lcd-green); margin-left: auto; white-space: nowrap; }
   .hof-trophy-badge { font-size: 11px; }
 
@@ -1003,7 +1003,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v15</div>
+  <div class="name">LB_RECAP v18</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1713,6 +1713,25 @@ function getHeatColorForOvr(ovr) {
   return HEAT_COLORS.magenta;
 }
 
+// SPD-specific heat mapping. Unlike SKL/AGL/STR, which spread realistically
+// across the ~40-99 scale, SPD in this export clusters much higher - the
+// slowest rostered player is still in the 50s - so the fixed absolute
+// thresholds used by getHeatColorForOvr would falsely paint most of the
+// league red/magenta. Instead this ranks a player's SPD against every
+// rostered player in the league and buckets by percentile, using the SAME
+// proportional band widths as getHeatColorForRank (top 10% green, next 14%
+// yellow, next 17% orange, next 17% red, remainder magenta).
+function getHeatColorForSpeedPercentile(speed, allSpeeds) {
+  if (speed == null || !allSpeeds || !allSpeeds.length) return null;
+  const better = allSpeeds.filter(s => s > speed).length;
+  const percentileFromTop = better / allSpeeds.length; // 0 = fastest in the league
+  if (percentileFromTop <= 0.10) return HEAT_COLORS.green;
+  if (percentileFromTop <= 0.24) return HEAT_COLORS.yellow;
+  if (percentileFromTop <= 0.41) return HEAT_COLORS.orange;
+  if (percentileFromTop <= 0.58) return HEAT_COLORS.red;
+  return HEAT_COLORS.magenta;
+}
+
 // For a rank (1 = best) out of some total field size, converts to the
 // equivalent percentile and applies the SAME proportional band widths as
 // the OVR mapping so a "#2 of 32" reads with the same visual weight as a
@@ -1814,7 +1833,7 @@ function analyzeDraftNeeds(rosterTeams, team) {
     // badge on every card, not just the ones where it's the trigger reason.
     const unitRank = computeUnitRank(rosterTeams, Math.round(team.tid), [pos]);
     const weakUnit = unitRank && unitRank.rank >= Math.ceil(unitRank.total * 0.65);
-    if (top.skill < 75) reasons.push(`Best player is only ${Math.round(top.skill)} OVR.`);
+    if (top.skill < 75) reasons.push(`Best player is only ${Math.round(top.skill)} SKL.`);
 
     // Thin depth behind the starter - a real injury-away-from-a-problem signal.
     // K/P excluded from the "no backup" flag specifically - real rosters
@@ -4310,6 +4329,46 @@ function renderLegendBowlBracket(container) {
       r.homeScore !== -1 && r.awayScore !== -1) || null;
   }
 
+  // Finds ANY real game a specific team played in a given week, regardless
+  // of who the seeding projection predicted their opponent would be.
+  function findRealOpponentGame(week, tid) {
+    if (!lastScheduleRows || tid == null) return null;
+    return lastScheduleRows.find(r => r.year === year && r.week === week &&
+      (r.homeTid === tid || r.awayTid === tid) &&
+      r.homeScore !== -1 && r.awayScore !== -1) || null;
+  }
+
+  // Resolves a predicted matchup against reality. If the exact predicted
+  // pair matches a real game, use it as-is (the common case). If not - the
+  // seeding projection guessed the wrong opponent for this slot - check
+  // whether either predicted team actually played someone else that week,
+  // and substitute in that real opponent. Without this, a single wrong
+  // seed guess would silently dead-end the bracket for that entire branch,
+  // since the exact-pair lookup would never find a match going forward.
+  function resolveMatchup(week, teamA, teamB) {
+    if (teamA && teamB) {
+      const real = findRealResult(week, teamA.tid, teamB.tid);
+      if (real) return { teamA, teamB, real };
+    }
+    if (teamA) {
+      const real = findRealOpponentGame(week, teamA.tid);
+      if (real) {
+        const oppTid = real.homeTid === teamA.tid ? real.awayTid : real.homeTid;
+        const seed = (teamB && teamB.tid === oppTid) ? teamB.seed : null;
+        return { teamA, teamB: { tid: oppTid, cityabbr: tidToCity[oppTid] || '?', seed }, real };
+      }
+    }
+    if (teamB) {
+      const real = findRealOpponentGame(week, teamB.tid);
+      if (real) {
+        const oppTid = real.homeTid === teamB.tid ? real.awayTid : real.homeTid;
+        const seed = (teamA && teamA.tid === oppTid) ? teamA.seed : null;
+        return { teamA: { tid: oppTid, cityabbr: tidToCity[oppTid] || '?', seed }, teamB, real };
+      }
+    }
+    return { teamA, teamB, real: null };
+  }
+
   function teamBoxHtml(entry, opts) {
     opts = opts || {};
     if (!entry) return `<div class="bracket-team placeholder">?</div>`;
@@ -4324,18 +4383,19 @@ function renderLegendBowlBracket(container) {
   // Builds one game box: checks for a real result first, falls back to the
   // seeding-based projection with no score if not yet played.
   function gameBoxHtml(label, teamA, teamB, week) {
-    const real = teamA && teamB ? findRealResult(week, teamA.tid, teamB.tid) : null;
+    const resolved = teamA && teamB ? resolveMatchup(week, teamA, teamB) : { teamA, teamB, real: null };
+    const rTeamA = resolved.teamA, rTeamB = resolved.teamB, real = resolved.real;
     let aWon = null, aScore = null, bScore = null;
     if (real) {
-      const aIsHome = real.homeTid === teamA.tid;
+      const aIsHome = real.homeTid === rTeamA.tid;
       aScore = aIsHome ? real.homeScore : real.awayScore;
       bScore = aIsHome ? real.awayScore : real.homeScore;
       aWon = aScore > bScore;
     }
     return `<div class="bracket-slot filled${real ? '' : ' unplayed'}">
       ${label ? `<div class="bracket-bowl-name">${esc(label)}</div>` : ''}
-      ${teamBoxHtml(teamA, { score: aScore, winner: aWon === true })}
-      ${teamBoxHtml(teamB, { score: bScore, winner: aWon === false })}
+      ${teamBoxHtml(rTeamA, { score: aScore, winner: aWon === true })}
+      ${teamBoxHtml(rTeamB, { score: bScore, winner: aWon === false })}
     </div>`;
   }
 
@@ -4344,23 +4404,37 @@ function renderLegendBowlBracket(container) {
     const r1Top = gameBoxHtml('Wild Card', s.round1[0].teamA, s.round1[0].teamB, LEGEND_BOWL_WEEKS.round1);
     const r1Bottom = gameBoxHtml('Wild Card', s.round1[1].teamA, s.round1[1].teamB, LEGEND_BOWL_WEEKS.round1);
 
+    // Generic winner resolver, reused at every round - Wild Card,
+    // Divisional, and Conf Champ all need the exact same "who actually
+    // won" logic, just with different weeks/teams fed in.
+    function winnerOf(week, teamA, teamB) {
+      if (!teamA || !teamB) return null;
+      const resolved = resolveMatchup(week, teamA, teamB);
+      if (!resolved.real) return null;
+      const aIsHome = resolved.real.homeTid === resolved.teamA.tid;
+      const aScore = aIsHome ? resolved.real.homeScore : resolved.real.awayScore;
+      const bScore = aIsHome ? resolved.real.awayScore : resolved.real.homeScore;
+      return aScore > bScore ? resolved.teamA : resolved.teamB;
+    }
+
     // Once a Wild Card game is actually decided, its winner should advance
     // into the Divisional box shown next to the bye team, not stay a "?".
     // The Divisional box IS the bye team's on-screen representation - no
     // separate standalone "Bye" box needed, that was showing the same team
     // twice.
-    function round1Winner(game) {
-      if (!game.teamA || !game.teamB) return null;
-      const real = findRealResult(LEGEND_BOWL_WEEKS.round1, game.teamA.tid, game.teamB.tid);
-      if (!real) return null;
-      const aIsHome = real.homeTid === game.teamA.tid;
-      const aScore = aIsHome ? real.homeScore : real.awayScore;
-      const bScore = aIsHome ? real.awayScore : real.homeScore;
-      return aScore > bScore ? game.teamA : game.teamB;
-    }
-    const divisionalTop = gameBoxHtml('Divisional', s.byeTop, round1Winner(s.round1[0]), LEGEND_BOWL_WEEKS.divisional);
-    const divisionalBottom = gameBoxHtml('Divisional', s.byeBottom, round1Winner(s.round1[1]), LEGEND_BOWL_WEEKS.divisional);
-    const confChamp = gameBoxHtml('Conf. Champ', null, null, LEGEND_BOWL_WEEKS.confChamp);
+    const r1TopWinner = winnerOf(LEGEND_BOWL_WEEKS.round1, s.round1[0].teamA, s.round1[0].teamB);
+    const r1BottomWinner = winnerOf(LEGEND_BOWL_WEEKS.round1, s.round1[1].teamA, s.round1[1].teamB);
+    const divisionalTop = gameBoxHtml('Divisional', s.byeTop, r1TopWinner, LEGEND_BOWL_WEEKS.divisional);
+    const divisionalBottom = gameBoxHtml('Divisional', s.byeBottom, r1BottomWinner, LEGEND_BOWL_WEEKS.divisional);
+
+    // Same propagation, one round further - Divisional winners advance
+    // into Conf Champ. This was previously hardcoded to null/null, so
+    // Conf Champ (and everything after it) could never show real teams
+    // even once those games had actually been played.
+    const divTopWinner = winnerOf(LEGEND_BOWL_WEEKS.divisional, s.byeTop, r1TopWinner);
+    const divBottomWinner = winnerOf(LEGEND_BOWL_WEEKS.divisional, s.byeBottom, r1BottomWinner);
+    const confChamp = gameBoxHtml('Conf. Champ', divTopWinner, divBottomWinner, LEGEND_BOWL_WEEKS.confChamp);
+    const confChampWinner = winnerOf(LEGEND_BOWL_WEEKS.confChamp, divTopWinner, divBottomWinner);
 
     // Wild Card and Divisional boxes share the exact same internal shape
     // (label + team1 + gap + team2), so pairing them in a row with
@@ -4391,12 +4465,20 @@ function renderLegendBowlBracket(container) {
     const col = (html, wide) => `<div class="bracket-round${wide ? ' bracket-round-lb' : ''}"><div class="bracket-slots">${html}</div></div>`;
     const champCol = col(confChamp, true);
 
-    return mirrored ? [champCol, pairRowsCol].join('') : [pairRowsCol, champCol].join('');
+    return {
+      html: mirrored ? [champCol, pairRowsCol].join('') : [pairRowsCol, champCol].join(''),
+      confChampWinner,
+    };
   }
 
-  const leftHtml = conferenceColumn(confKeys[0], false);
-  const rightHtml = conferenceColumn(confKeys[1], true);
-  const superBowlHtml = `<div class="bracket-round bracket-round-lb"><div class="bracket-slots">${gameBoxHtml('Super Bowl', null, null, LEGEND_BOWL_WEEKS.superBowl)}</div></div>`;
+  const left = conferenceColumn(confKeys[0], false);
+  const right = conferenceColumn(confKeys[1], true);
+  const leftHtml = left.html;
+  const rightHtml = right.html;
+  // Same propagation, final round - both conferences' champions feed the
+  // Super Bowl, instead of it being permanently hardcoded to "? / ?".
+  const superBowlGame = gameBoxHtml('Super Bowl', left.confChampWinner, right.confChampWinner, LEGEND_BOWL_WEEKS.superBowl);
+  const superBowlHtml = `<div class="bracket-round bracket-round-lb"><div class="bracket-slots">${superBowlGame}</div></div>`;
 
   container.innerHTML = `
     <h2 class="section-title">Playoff Bracket</h2>
@@ -5034,14 +5116,23 @@ function renderDraftPrepResult(cityabbr) {
   const avgOf = (field) => allPlayers.length ? (allPlayers.reduce((s, p) => s + (p[field] || 0), 0) / allPlayers.length) : 0;
   const totalSalary = allPlayers.reduce((s, p) => s + (Number(p.salary) || 0), 0);
 
+  // League-wide (all 32 teams, not just this one) SPD values, for the
+  // percentile-based heat mapping - a team-only pool would be too small
+  // and would shift depending which team you're viewing.
+  const leagueSpeeds = (lastRosterTeams || [])
+    .flatMap(t => (t.player || []))
+    .map(p => Math.round(p.speed || 0))
+    .filter(s => s > 0);
+
   function positionGroupBlock(pos) {
     const players = (team.player || []).filter(p => p.position === pos).sort((a, b) => (b.skill || 0) - (a.skill || 0));
     if (!players.length) return '';
     const rows = players.map(p => `<div class="dp-row">
       <span class="dp-pos">${esc(pos)}</span>
-      <span class="dp-name">${p.captain ? '\u2B50 ' : ''}${esc(p.fname)} ${esc(p.lname)}</span>
+      <span class="dp-name">${p.captain ? '\u2B50 ' : ''}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
-      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.speed || 0))};">${esc(Math.round(p.speed || 0))}</span>
+      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+      <span class="dp-stat" style="color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
       <span class="dp-age">${esc(p.age != null ? Math.round(p.age) : '-')}</span>
@@ -5054,7 +5145,7 @@ function renderDraftPrepResult(cityabbr) {
 
   const header = `<div class="dp-row dp-header">
     <span class="dp-pos">Pos</span><span class="dp-name">Name</span>
-    <span class="dp-stat">OVR</span><span class="dp-stat">SPD</span><span class="dp-stat">AGL</span><span class="dp-stat">STR</span>
+    <span class="dp-stat">OVR</span><span class="dp-stat">SKL</span><span class="dp-stat">SPD</span><span class="dp-stat">AGL</span><span class="dp-stat">STR</span>
     <span class="dp-age">Age</span><span class="dp-morale">Mor</span><span class="dp-sal">Sal</span><span class="dp-cnt">Cnt</span>
   </div>`;
 
@@ -5064,7 +5155,7 @@ function renderDraftPrepResult(cityabbr) {
     <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
     <div class="dp-summary-grid" style="margin-top:20px;">
-      ${statBlock('Avg OVR', avgOf('skill').toFixed(1))}
+      ${statBlock('Avg SKL', avgOf('skill').toFixed(1))}
       ${statBlock('Avg SPD/AGL/STR', `${avgOf('speed').toFixed(0)} / ${avgOf('agility').toFixed(0)} / ${avgOf('strength').toFixed(0)}`)}
       ${statBlock('Total Salary', `$${totalSalary.toFixed(1)}M`)}
     </div>
