@@ -853,6 +853,20 @@
   .dp-identity-rank { color: var(--muted); font-size: 11px; margin-left: 6px; }
   .dp-identity-strategy { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); line-height: 1.5; }
 
+  .dp-tier-editor-toggle {
+    display: inline-block; cursor: pointer; font-family: 'IBM Plex Mono', monospace; font-size: 11px;
+    color: var(--amber); border: 1px solid var(--line); border-radius: 4px; padding: 5px 10px; margin-bottom: 10px;
+  }
+  .dp-tier-editor-toggle:hover { background: rgba(255,255,255,0.04); }
+  .dp-tier-editor { background: var(--lcd-bg); border-radius: 6px; padding: 12px 14px; margin-bottom: 14px; }
+  .dp-tier-editor-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 6px 12px; }
+  .dp-tier-row { display: flex; align-items: center; justify-content: space-between; gap: 6px; }
+  .dp-tier-pos { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); }
+  .dp-tier-select {
+    background: var(--panel-bg, #0a1a0a); color: var(--chalk); border: 1px solid var(--line); border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 2px 4px;
+  }
+
   .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
   .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 8px 10px; border-left: 3px solid; cursor: pointer; user-select: none; }
   .draft-need-card:hover { background: rgba(255,255,255,0.03); }
@@ -1039,7 +1053,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v22</div>
+  <div class="name">LB_RECAP v23</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1846,14 +1860,36 @@ const DP_UNIT_SPECIAL = ['K', 'P'];
 // particular is far less used here than HB, so it's grouped down with
 // TE/P/K rather than treated like a real 2-way skill position. Used to
 // sort draft needs by what actually matters for this game, not just by
-// how many red flags a position happens to trip.
-const DP_POSITION_TIER = {
+// how many red flags a position happens to trip. This is only the
+// DEFAULT - the user can override any position's tier in the UI, and
+// their choices win. See getPositionTier / customPositionTiers below.
+const DP_POSITION_TIER_DEFAULT = {
   QB: 1, HB: 1, WR: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, CB: 1, ILB: 1,
   LDE: 2, LDT: 2, RDT: 2, RDE: 2, OLB: 2, FS: 2, SS: 2,
   TE: 3, P: 3, K: 3, FB: 3,
 };
 const TIER_LABEL = { 1: 'TIER 1', 2: 'TIER 2', 3: 'TIER 3' };
 const TIER_COLOR = { 1: '#39FF6A', 2: '#FFC93C', 3: '#7A9482' };
+const DP_ALL_POSITIONS = Object.keys(DP_POSITION_TIER_DEFAULT);
+
+// User-editable tier overrides. This file runs standalone in the user's
+// own browser (not inside a claude.ai artifact sandbox), so localStorage
+// persistence across sessions is safe and appropriate here.
+let customPositionTiers = {};
+let tierEditorOpen = false;
+function loadCustomTiers() {
+  try {
+    const raw = localStorage.getItem('lb_recap_position_tiers');
+    if (raw) customPositionTiers = JSON.parse(raw) || {};
+  } catch (e) { customPositionTiers = {}; }
+}
+function saveCustomTiers() {
+  try { localStorage.setItem('lb_recap_position_tiers', JSON.stringify(customPositionTiers)); } catch (e) { /* storage unavailable, tiers just won't persist */ }
+}
+function getPositionTier(pos) {
+  return customPositionTiers[pos] || DP_POSITION_TIER_DEFAULT[pos] || 3;
+}
+loadCustomTiers();
 
 // This team's own average SKL/SPD/AGL/STR and combined salary across one
 // group of positions - the per-team half of what computeUnitRank compares
@@ -1942,7 +1978,7 @@ function analyzeDraftNeeds(rosterTeams, team) {
   allPositions.forEach(pos => {
     const players = (team.player || []).filter(p => p.position === pos && p.skill != null)
       .sort((a, b) => b.skill - a.skill);
-    const tier = DP_POSITION_TIER[pos] || 3;
+    const tier = getPositionTier(pos);
     if (!players.length) {
       needs.push({ position: pos, severity: 'critical', reasons: ['No player at this position at all.'], tier });
       return;
@@ -5352,10 +5388,22 @@ function renderDraftPrepResult(cityabbr) {
     `;
   }
 
+  const tierEditorRows = DP_ALL_POSITIONS.map(pos => {
+    const currentTier = getPositionTier(pos);
+    const options = [1, 2, 3].map(t => `<option value="${t}" ${t === currentTier ? 'selected' : ''}>Tier ${t}</option>`).join('');
+    return `<div class="dp-tier-row"><span class="dp-tier-pos">${esc(pos)}</span><select class="dp-tier-select" data-pos="${esc(pos)}">${options}</select></div>`;
+  }).join('');
+
   resultEl.innerHTML = `
     ${identityHtml}
     <div class="aa-column-title" style="margin-top:20px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Sorted by positional importance first (Tier 1 → Tier 3, per Legend Bowl usage - not generic NFL value), then by severity within a tier. Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
+    <div class="dp-tier-editor-toggle" id="dp-tier-editor-toggle">\u2699 Customize Position Tiers</div>
+    <div class="dp-tier-editor" id="dp-tier-editor" style="display:${tierEditorOpen ? 'block' : 'none'};">
+      <p class="empty-note" style="text-align:left; margin: 0 0 8px;">These are just OUR defaults - you know your own league best. Changes apply immediately and are remembered on this device.</p>
+      <div class="dp-tier-editor-grid">${tierEditorRows}</div>
+      <button class="load-btn" id="dp-tier-reset-btn" style="margin-top:10px;">Reset to Default</button>
+    </div>
     <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
     <div class="aa-column-title" style="margin-top:20px;">TEAM AVERAGES BY UNIT</div>
@@ -5392,6 +5440,30 @@ function renderDraftPrepResult(cityabbr) {
         card.classList.toggle('expanded', !isOpen);
       });
     });
+
+    const tierToggleBtn = resultEl.querySelector('#dp-tier-editor-toggle');
+    const tierEditorPanel = resultEl.querySelector('#dp-tier-editor');
+    if (tierToggleBtn && tierEditorPanel) {
+      tierToggleBtn.addEventListener('click', () => {
+        tierEditorOpen = !tierEditorOpen;
+        tierEditorPanel.style.display = tierEditorOpen ? 'block' : 'none';
+      });
+    }
+    resultEl.querySelectorAll('.dp-tier-select').forEach(sel => {
+      sel.addEventListener('change', () => {
+        customPositionTiers[sel.dataset.pos] = Number(sel.value);
+        saveCustomTiers();
+        renderDraftPrepResult(cityabbr); // re-render this team with the new tiers applied
+      });
+    });
+    const resetBtn = resultEl.querySelector('#dp-tier-reset-btn');
+    if (resetBtn) {
+      resetBtn.addEventListener('click', () => {
+        customPositionTiers = {};
+        saveCustomTiers();
+        renderDraftPrepResult(cityabbr);
+      });
+    }
   }
 }
 
