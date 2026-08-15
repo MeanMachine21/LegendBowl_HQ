@@ -652,6 +652,14 @@
   }
   .lineup-los { height: 2px; background: repeating-linear-gradient(90deg, var(--lcd-green-dim) 0 10px, transparent 10px 18px); opacity: 0.5; margin: 2px 0; }
   .formation-row { display: flex; flex-wrap: wrap; justify-content: center; gap: 8px; }
+  /* row-qb-tight pulls the QB card up -56px to sit close to the line, which
+     visually overlaps the WR3 slot card (itself already shifted up -12px).
+     The row container is still full-width even though the QB card is
+     narrow and centered, so without this it silently steals clicks over
+     WR3's empty space. Letting clicks pass through everywhere except the
+     actual card fixes that without touching the visual layout. */
+  .formation-row { pointer-events: none; }
+  .formation-row .formation-card { pointer-events: auto; }
   /* Two edge players flanking a centered cluster (CB-DL-CB, WR-OL-WR) - flex
      space-between reliably pins the edges regardless of container width,
      which plain flex-wrap could not do (it just fills and wraps in DOM order,
@@ -817,6 +825,24 @@
   #trade-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--lcd-green); margin-top: 10px; }
 
   .dp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 14px 0; }
+
+  .dp-unit-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; margin: 14px 0; }
+  .dp-unit-card { background: var(--lcd-bg); border-radius: 6px; padding: 12px 14px; border-left: 3px solid var(--line); }
+  .dp-unit-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 8px; }
+  .dp-unit-title {
+    font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 13px; letter-spacing: 1.5px;
+    text-transform: uppercase; color: var(--amber);
+  }
+  .dp-unit-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 20px; }
+  .dp-unit-ratings-line {
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; color: var(--chalk);
+    padding: 4px 0 8px; border-bottom: 1px solid rgba(255,255,255,0.06); margin-bottom: 4px;
+  }
+  .dp-unit-ratings-line .dp-unit-ratings-label { display: block; font-size: 9px; font-weight: 400; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); margin-bottom: 2px; }
+  .dp-unit-metric { display: flex; justify-content: space-between; align-items: baseline; font-family: 'IBM Plex Mono', monospace; font-size: 11px; padding: 3px 0; }
+  .dp-unit-metric-label { color: var(--muted); text-transform: uppercase; letter-spacing: 0.5px; }
+  .dp-unit-metric-val { color: var(--chalk); font-weight: 700; }
+  .dp-unit-metric-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 12px; margin-left: 7px; }
 
   .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
   .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 8px 10px; border-left: 3px solid; cursor: pointer; user-select: none; }
@@ -1003,7 +1029,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v18</div>
+  <div class="name">LB_RECAP v21</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1767,11 +1793,54 @@ function computeTeamStatRank(rosterTeams, targetTid, field, higherIsBetter) {
   return idx === -1 ? null : { rank: idx + 1, total: entries.length };
 }
 
+// League-wide rank sourced from an individual player's own latest-season
+// stat rather than a team_stats field - needed for special teams, since
+// the team_stats object has no dedicated kicking/punting fields at all
+// (only what's on the K/P player's own player_stats). Uses each team's
+// highest-skill player at the given position as "the" kicker/punter,
+// which matches how a real roster only carries one of each.
+function computePlayerStatRank(rosterTeams, targetTid, position, statField, higherIsBetter) {
+  const entries = (rosterTeams || []).map(team => {
+    const players = (team.player || []).filter(p => p.position === position && p.skill != null);
+    if (!players.length) return null;
+    const primary = players.sort((a, b) => (b.skill || 0) - (a.skill || 0))[0];
+    const statsArr = primary.player_stats || [];
+    const latest = statsArr.reduce((best, s) => (best == null || (s.year ?? -1) > (best.year ?? -1)) ? s : best, null);
+    if (!latest || latest[statField] == null) return null;
+    const val = parseFloat(latest[statField]);
+    if (Number.isNaN(val)) return null;
+    return { tid: Math.round(team.tid), value: val };
+  }).filter(Boolean);
+  if (!entries.length) return null;
+  entries.sort((a, b) => higherIsBetter ? b.value - a.value : a.value - b.value);
+  const idx = entries.findIndex(e => e.tid === targetTid);
+  return idx === -1 ? null : { rank: idx + 1, total: entries.length };
+}
+
 // Position groupings matching the real in-game 53-man roster screen
 // exactly (confirmed against a screenshot), split into Offense and
 // Defense/Special Teams columns.
 const DRAFT_PREP_OFFENSE_POSITIONS = ['QB', 'HB', 'FB', 'TE', 'WR', 'LT', 'LG', 'C', 'RG', 'RT'];
 const DRAFT_PREP_DEFENSE_POSITIONS = ['LDE', 'LDT', 'RDT', 'RDE', 'ILB', 'OLB', 'CB', 'FS', 'SS', 'P', 'K'];
+
+// Same offense group as above; defense/special teams split apart from the
+// combined list so each unit's league-wide rank is computed against the
+// units it actually corresponds to (K/P shouldn't drag down or prop up a
+// defensive-line-heavy "defense" rank, and vice versa).
+const DP_UNIT_OFFENSE = DRAFT_PREP_OFFENSE_POSITIONS;
+const DP_UNIT_DEFENSE = ['LDE', 'LDT', 'RDT', 'RDE', 'ILB', 'OLB', 'CB', 'FS', 'SS'];
+const DP_UNIT_SPECIAL = ['K', 'P'];
+
+// This team's own average SKL/SPD/AGL/STR and combined salary across one
+// group of positions - the per-team half of what computeUnitRank compares
+// league-wide.
+function computeUnitAverages(team, positions) {
+  const players = (team.player || []).filter(p => positions.includes(p.position) && p.skill != null);
+  if (!players.length) return null;
+  const avg = (field) => players.reduce((sum, p) => sum + (p[field] || 0), 0) / players.length;
+  const salary = players.reduce((sum, p) => sum + (Number(p.salary) || 0), 0);
+  return { skill: avg('skill'), speed: avg('speed'), agility: avg('agility'), strength: avg('strength'), salary, count: players.length };
+}
 
 function moraleToEmoji(morale) {
   if (morale == null) return '';
@@ -5112,10 +5181,6 @@ function renderDraftPrepResult(cityabbr) {
     </div>`;
   }
 
-  const allPlayers = (team.player || []).filter(p => p.skill != null);
-  const avgOf = (field) => allPlayers.length ? (allPlayers.reduce((s, p) => s + (p[field] || 0), 0) / allPlayers.length) : 0;
-  const totalSalary = allPlayers.reduce((s, p) => s + (Number(p.salary) || 0), 0);
-
   // League-wide (all 32 teams, not just this one) SPD values, for the
   // percentile-based heat mapping - a team-only pool would be too small
   // and would shift depending which team you're viewing.
@@ -5149,15 +5214,60 @@ function renderDraftPrepResult(cityabbr) {
     <span class="dp-age">Age</span><span class="dp-morale">Mor</span><span class="dp-sal">Sal</span><span class="dp-cnt">Cnt</span>
   </div>`;
 
+  const currentTeamStats = getLatestTeamStats(team);
+
+  function unitCard(title, positions, rankLines) {
+    const stats = computeUnitAverages(team, positions);
+    if (!stats) return '';
+    const rank = computeUnitRank(lastRosterTeams, Math.round(team.tid), positions);
+    const rankHtml = rank ? `<span class="dp-unit-rank" style="color:${getHeatColorForRank(rank.rank, rank.total)};">#${esc(rank.rank)}</span>` : '';
+    const metricLines = (rankLines || []).map(({ label, value, rankInfo }) => {
+      const badgeHtml = rankInfo ? `<span class="dp-unit-metric-rank" style="color:${getHeatColorForRank(rankInfo.rank, rankInfo.total)};">#${esc(rankInfo.rank)}</span>` : '';
+      return `<div class="dp-unit-metric"><span class="dp-unit-metric-label">${esc(label)}</span><span class="dp-unit-metric-val">${esc(value)}${badgeHtml}</span></div>`;
+    }).join('');
+    return `<div class="dp-unit-card">
+      <div class="dp-unit-top">
+        <div class="dp-unit-title">${esc(title)}</div>
+        ${rankHtml}
+      </div>
+      <div class="dp-unit-ratings-line"><span class="dp-unit-ratings-label">SKL / SPD / AGL / STR</span>${esc(stats.skill.toFixed(0))} / ${esc(stats.speed.toFixed(0))} / ${esc(stats.agility.toFixed(0))} / ${esc(stats.strength.toFixed(0))}</div>
+      ${metricLines}
+      <div class="dp-unit-metric"><span class="dp-unit-metric-label">Unit Salary</span><span class="dp-unit-metric-val">$${esc(stats.salary.toFixed(1))}M</span></div>
+    </div>`;
+  }
+
+  const offenseRankLines = currentTeamStats ? [
+    { label: 'Points For', value: currentTeamStats.stat_total_pts ?? '-', rankInfo: computeTeamStatRank(lastRosterTeams, Math.round(team.tid), 'stat_total_pts', true) },
+    { label: 'Total Off Yards', value: currentTeamStats.stat_total_offense_yards ?? '-', rankInfo: computeTeamStatRank(lastRosterTeams, Math.round(team.tid), 'stat_total_offense_yards', true) },
+  ] : [];
+  const defenseRankLines = currentTeamStats ? [
+    { label: 'Points Allowed', value: currentTeamStats.stat_total_pts_allowed ?? '-', rankInfo: computeTeamStatRank(lastRosterTeams, Math.round(team.tid), 'stat_total_pts_allowed', false) },
+    { label: 'Total Yards Allowed', value: currentTeamStats.stat_total_yards_allowed ?? '-', rankInfo: computeTeamStatRank(lastRosterTeams, Math.round(team.tid), 'stat_total_yards_allowed', false) },
+  ] : [];
+  // Special teams has no team_stats fields at all - these come straight
+  // from the team's own K/P player_stats instead (see computePlayerStatRank).
+  const kFgRank = computePlayerStatRank(lastRosterTeams, Math.round(team.tid), 'K', 'stat_kick_fg_perc', true);
+  const pNetRank = computePlayerStatRank(lastRosterTeams, Math.round(team.tid), 'P', 'stat_punt_net_avg', true);
+  const kPlayer = (team.player || []).filter(p => p.position === 'K').sort((a, b) => (b.skill || 0) - (a.skill || 0))[0];
+  const pPlayer = (team.player || []).filter(p => p.position === 'P').sort((a, b) => (b.skill || 0) - (a.skill || 0))[0];
+  const kLatest = kPlayer ? (kPlayer.player_stats || []).reduce((best, s) => (best == null || (s.year ?? -1) > (best.year ?? -1)) ? s : best, null) : null;
+  const pLatest = pPlayer ? (pPlayer.player_stats || []).reduce((best, s) => (best == null || (s.year ?? -1) > (best.year ?? -1)) ? s : best, null) : null;
+  const specialRankLines = [
+    { label: 'K FG%', value: kLatest && kLatest.stat_kick_fg_perc != null ? `${kLatest.stat_kick_fg_perc}%` : '-', rankInfo: kFgRank },
+    { label: 'P Net Avg', value: pLatest && pLatest.stat_punt_net_avg != null ? pLatest.stat_punt_net_avg : '-', rankInfo: pNetRank },
+  ];
+
   resultEl.innerHTML = `
     <div class="aa-column-title" style="margin-top:6px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
     <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
-    <div class="dp-summary-grid" style="margin-top:20px;">
-      ${statBlock('Avg SKL', avgOf('skill').toFixed(1))}
-      ${statBlock('Avg SPD/AGL/STR', `${avgOf('speed').toFixed(0)} / ${avgOf('agility').toFixed(0)} / ${avgOf('strength').toFixed(0)}`)}
-      ${statBlock('Total Salary', `$${totalSalary.toFixed(1)}M`)}
+    <div class="aa-column-title" style="margin-top:20px;">TEAM AVERAGES BY UNIT</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Corner badge is the same computed league-wide skill estimate as above (1-32). Points/yards/kicking ranks are real, from this season's actual stats.</p>
+    <div class="dp-unit-grid">
+      ${unitCard('Offense', DP_UNIT_OFFENSE, offenseRankLines)}
+      ${unitCard('Defense', DP_UNIT_DEFENSE, defenseRankLines)}
+      ${unitCard('Special Teams', DP_UNIT_SPECIAL, specialRankLines)}
     </div>
 
     <div class="aa-column-title" style="margin-top:20px;">FULL ROSTER</div>
