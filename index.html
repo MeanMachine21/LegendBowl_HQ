@@ -844,11 +844,21 @@
   .dp-unit-metric-val { color: var(--chalk); font-weight: 700; }
   .dp-unit-metric-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 12px; margin-left: 7px; }
 
+  .dp-identity-card { background: var(--lcd-bg); border-radius: 6px; padding: 14px 16px; margin: 4px 0 10px; }
+  .dp-identity-label {
+    font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 900; font-size: 24px;
+    letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px;
+  }
+  .dp-identity-detail { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); margin-bottom: 3px; }
+  .dp-identity-rank { color: var(--muted); font-size: 11px; margin-left: 6px; }
+  .dp-identity-strategy { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); margin-top: 8px; padding-top: 8px; border-top: 1px solid rgba(255,255,255,0.06); line-height: 1.5; }
+
   .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
   .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 8px 10px; border-left: 3px solid; cursor: pointer; user-select: none; }
   .draft-need-card:hover { background: rgba(255,255,255,0.03); }
   .draft-need-card.expanded { grid-column: 1 / -1; }
   .draft-need-card-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+  .draft-need-tier { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 9px; letter-spacing: 1px; display: block; margin-bottom: 3px; }
   .draft-need-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 16px; }
   .draft-need-pos { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 15px; }
   .draft-need-summary { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
@@ -1029,7 +1039,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v21</div>
+  <div class="name">LB_RECAP v22</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1831,6 +1841,20 @@ const DP_UNIT_OFFENSE = DRAFT_PREP_OFFENSE_POSITIONS;
 const DP_UNIT_DEFENSE = ['LDE', 'LDT', 'RDT', 'RDE', 'ILB', 'OLB', 'CB', 'FS', 'SS'];
 const DP_UNIT_SPECIAL = ['K', 'P'];
 
+// Positional importance tiers for Legend Bowl specifically, per direct
+// user guidance - not a generic NFL positional value chart. FB in
+// particular is far less used here than HB, so it's grouped down with
+// TE/P/K rather than treated like a real 2-way skill position. Used to
+// sort draft needs by what actually matters for this game, not just by
+// how many red flags a position happens to trip.
+const DP_POSITION_TIER = {
+  QB: 1, HB: 1, WR: 1, LT: 1, LG: 1, C: 1, RG: 1, RT: 1, CB: 1, ILB: 1,
+  LDE: 2, LDT: 2, RDT: 2, RDE: 2, OLB: 2, FS: 2, SS: 2,
+  TE: 3, P: 3, K: 3, FB: 3,
+};
+const TIER_LABEL = { 1: 'TIER 1', 2: 'TIER 2', 3: 'TIER 3' };
+const TIER_COLOR = { 1: '#39FF6A', 2: '#FFC93C', 3: '#7A9482' };
+
 // This team's own average SKL/SPD/AGL/STR and combined salary across one
 // group of positions - the per-team half of what computeUnitRank compares
 // league-wide.
@@ -1840,6 +1864,37 @@ function computeUnitAverages(team, positions) {
   const avg = (field) => players.reduce((sum, p) => sum + (p[field] || 0), 0) / players.length;
   const salary = players.reduce((sum, p) => sum + (Number(p.salary) || 0), 0);
   return { skill: avg('skill'), speed: avg('speed'), agility: avg('agility'), strength: avg('strength'), salary, count: players.length };
+}
+
+// League-wide rank of this team's designed run rate (rush_percentage, a
+// fixed per-team scheme setting - NOT the same as actual season rush
+// plays, though the two correlate) plus what the team actually executed
+// this season, for a "this team likes to run/pass" read to plan around.
+function computeRunPassIdentity(rosterTeams, team) {
+  if (team.rush_percentage == null) return null;
+  const entries = (rosterTeams || [])
+    .filter(t => t.rush_percentage != null)
+    .map(t => ({ tid: Math.round(t.tid), val: t.rush_percentage }));
+  entries.sort((a, b) => b.val - a.val); // rank 1 = most run-leaning design in the league
+  const idx = entries.findIndex(e => e.tid === Math.round(team.tid));
+  const rank = idx === -1 ? null : { rank: idx + 1, total: entries.length };
+
+  const s = getLatestTeamStats(team);
+  let actualRushPct = null;
+  if (s && s.stat_rush_plays != null && s.stat_pass_plays != null) {
+    const rushPlays = Number(s.stat_rush_plays) || 0;
+    const passPlays = Number(s.stat_pass_plays) || 0;
+    const total = rushPlays + passPlays;
+    if (total > 0) actualRushPct = 100 * rushPlays / total;
+  }
+
+  let label = 'Balanced';
+  if (rank) {
+    const pct = (rank.rank - 1) / rank.total;
+    if (pct <= 0.33) label = 'Run-Leaning';
+    else if (pct >= 0.67) label = 'Pass-Leaning';
+  }
+  return { designedRushPct: team.rush_percentage, rank, actualRushPct, label };
 }
 
 function moraleToEmoji(morale) {
@@ -1887,29 +1942,45 @@ function analyzeDraftNeeds(rosterTeams, team) {
   allPositions.forEach(pos => {
     const players = (team.player || []).filter(p => p.position === pos && p.skill != null)
       .sort((a, b) => b.skill - a.skill);
+    const tier = DP_POSITION_TIER[pos] || 3;
     if (!players.length) {
-      needs.push({ position: pos, severity: 'critical', reasons: ['No player at this position at all.'] });
+      needs.push({ position: pos, severity: 'critical', reasons: ['No player at this position at all.'], tier });
       return;
     }
-    const reasons = [];
     const top = players[0];
     const second = players[1];
+    const unitRank = computeUnitRank(rosterTeams, Math.round(team.tid), [pos]);
+
+    // K/P are always the lone player at their position - real rosters only
+    // ever carry one of each, so "no backup," roster-count-vs-league, and
+    // age-succession checks would fire on literally every team and mean
+    // nothing. The league's own skill distribution at K/P is also tight
+    // enough that a relative "weak unit" rank doesn't indicate a real
+    // problem the way it does elsewhere. Only flag these two positions if
+    // the actual player is bad in absolute terms.
+    if (pos === 'K' || pos === 'P') {
+      if (top.skill < 65) {
+        const severity = top.skill < 50 ? 'critical' : 'moderate';
+        const label = pos === 'K' ? 'Kicker' : 'Punter';
+        needs.push({ position: pos, severity, reasons: [`${label} is a real liability at ${Math.round(top.skill)} SKL.`], topPlayerSkill: top.skill, unitRank, tier });
+      }
+      return;
+    }
+
+    const reasons = [];
 
     // Weak group overall - the whole unit's league-wide rank, not just the
     // top player - catches a fine starter sitting on genuinely bad depth,
     // which a top-player-only check would miss entirely. Always computed
     // and attached (not just when flagged) so the UI can show it as a
     // badge on every card, not just the ones where it's the trigger reason.
-    const unitRank = computeUnitRank(rosterTeams, Math.round(team.tid), [pos]);
     const weakUnit = unitRank && unitRank.rank >= Math.ceil(unitRank.total * 0.65);
     if (top.skill < 75) reasons.push(`Best player is only ${Math.round(top.skill)} SKL.`);
 
     // Thin depth behind the starter - a real injury-away-from-a-problem signal.
-    // K/P excluded from the "no backup" flag specifically - real rosters
-    // normally only carry one of each, so that's not a depth problem.
     if (second && (top.skill - second.skill) >= 12) {
       reasons.push(`Big drop-off after the starter (${Math.round(top.skill)} to ${Math.round(second.skill)}).`);
-    } else if (!second && pos !== 'K' && pos !== 'P') {
+    } else if (!second) {
       reasons.push('No real backup at this position.');
     }
 
@@ -1934,7 +2005,7 @@ function analyzeDraftNeeds(rosterTeams, team) {
     if (reasons.length || weakUnit) {
       const effectiveCount = reasons.length + (weakUnit ? 1 : 0);
       const severity = effectiveCount >= 3 ? 'critical' : effectiveCount === 2 ? 'moderate' : 'minor';
-      needs.push({ position: pos, severity, reasons, topPlayerSkill: top.skill, unitRank });
+      needs.push({ position: pos, severity, reasons, topPlayerSkill: top.skill, unitRank, tier });
     }
   });
 
@@ -5165,17 +5236,19 @@ function renderDraftPrepResult(cityabbr) {
 
   const needs = analyzeDraftNeeds(lastRosterTeams, team);
   const severityOrder = { critical: 0, moderate: 1, minor: 2 };
-  needs.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+  needs.sort((a, b) => (a.tier - b.tier) || (severityOrder[a.severity] - severityOrder[b.severity]));
 
   function needCard(n, idx) {
     const color = n.severity === 'critical' ? '#FF4D4D' : n.severity === 'moderate' ? '#FF9F40' : '#FFE066';
     const rankBadge = n.unitRank ? `<span class="draft-need-rank" style="color:${getHeatColorForRank(n.unitRank.rank, n.unitRank.total)};">#${esc(n.unitRank.rank)}</span>` : '';
+    const tierBadge = `<span class="draft-need-tier" style="color:${TIER_COLOR[n.tier]};">${esc(TIER_LABEL[n.tier])}</span>`;
     const reasonsList = n.reasons.length ? n.reasons : ['Whole position group ranks near the bottom of the league.'];
     return `<div class="draft-need-card" data-need-idx="${idx}" style="border-left-color:${color};">
       <div class="draft-need-card-top">
         <div class="draft-need-pos" style="color:${color};">${esc(n.position)}</div>
         ${rankBadge}
       </div>
+      ${tierBadge}
       <div class="draft-need-summary">${esc(reasonsList.length)} issue${reasonsList.length === 1 ? '' : 's'} <span class="draft-need-toggle">tap for details \u25BE</span></div>
       <ul class="draft-need-reasons" style="display:none;">${reasonsList.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
     </div>`;
@@ -5257,9 +5330,32 @@ function renderDraftPrepResult(cityabbr) {
     { label: 'P Net Avg', value: pLatest && pLatest.stat_punt_net_avg != null ? pLatest.stat_punt_net_avg : '-', rankInfo: pNetRank },
   ];
 
+  const identity = computeRunPassIdentity(lastRosterTeams, team);
+  let identityHtml = '';
+  if (identity) {
+    const labelColor = identity.label === 'Run-Leaning' ? '#FFC93C' : identity.label === 'Pass-Leaning' ? '#FF3EC9' : '#39FF6A';
+    const strategyNote = identity.label === 'Run-Leaning'
+      ? 'Leans run - Tier 1 O-Line and ILB depth matter more here than usual, since the scheme runs through them.'
+      : identity.label === 'Pass-Leaning'
+      ? 'Leans pass - WR and CB depth (both Tier 1) carry more weight here, along with pass-rush off the edge.'
+      : 'No strong lean either direction - no unit gets a scheme-driven priority bump.';
+    const rankHtml = identity.rank ? `<span class="dp-identity-rank" style="color:${getHeatColorForRank(identity.rank.rank, identity.rank.total)};">#${esc(identity.rank.rank)} most run-leaning of ${esc(identity.rank.total)}</span>` : '';
+    identityHtml = `
+      <div class="aa-column-title" style="margin-top:6px;">TEAM IDENTITY</div>
+      <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Designed run rate comes from the team's own scheme setting in the save (separate from, but correlated with, what actually happened on the field this season).</p>
+      <div class="dp-identity-card">
+        <div class="dp-identity-label" style="color:${labelColor};">${esc(identity.label)}</div>
+        <div class="dp-identity-detail">Designed run rate: <strong>${esc(Math.round(identity.designedRushPct))}%</strong> ${rankHtml}</div>
+        ${identity.actualRushPct != null ? `<div class="dp-identity-detail">This season, actually ran: <strong>${esc(identity.actualRushPct.toFixed(0))}%</strong> of plays</div>` : ''}
+        <div class="dp-identity-strategy">${esc(strategyNote)}</div>
+      </div>
+    `;
+  }
+
   resultEl.innerHTML = `
-    <div class="aa-column-title" style="margin-top:6px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
-    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
+    ${identityHtml}
+    <div class="aa-column-title" style="margin-top:20px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Sorted by positional importance first (Tier 1 → Tier 3, per Legend Bowl usage - not generic NFL value), then by severity within a tier. Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
     <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
     <div class="aa-column-title" style="margin-top:20px;">TEAM AVERAGES BY UNIT</div>
