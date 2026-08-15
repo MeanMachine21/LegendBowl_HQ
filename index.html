@@ -815,6 +815,30 @@
   .trade-preview { min-height: 40px; }
   .trade-warning { color: var(--amber); font-size: 12px; margin-top: 10px; min-height: 16px; }
   #trade-status { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--lcd-green); margin-top: 10px; }
+
+  .dp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 14px 0; }
+
+  .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 10px 0; }
+  .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 10px 14px; border-left: 3px solid; }
+  .draft-need-card-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
+  .draft-need-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 20px; }
+  .draft-need-pos { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 18px; }
+  .draft-need-reasons { margin: 0; padding-left: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.6; }
+
+  .dp-columns { display: flex; gap: 24px; margin-top: 10px; }
+  .dp-column { flex: 1; min-width: 0; }
+  .dp-column-title { font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 14px; letter-spacing: 1px; text-transform: uppercase; color: var(--amber); margin-bottom: 6px; }
+  .dp-group { background: var(--lcd-bg); border-radius: 4px; margin-bottom: 6px; overflow: hidden; }
+  .dp-row { display: flex; align-items: center; gap: 3px; padding: 5px 8px; border-bottom: 1px solid rgba(255,255,255,0.03); }
+  .dp-row:last-child { border-bottom: none; }
+  .dp-row.dp-header { background: #0a1a0a; border-radius: 4px; margin-bottom: 4px; font-family: 'IBM Plex Mono', monospace; font-size: 10px; text-transform: uppercase; color: var(--muted); }
+  .dp-pos { flex: 0 0 34px; overflow: hidden; white-space: nowrap; font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; color: var(--amber); }
+  .dp-name { flex: 1 1 auto; min-width: 60px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--chalk); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .dp-stat { flex: 0 0 26px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 12px; font-weight: 700; }
+  .dp-age { flex: 0 0 28px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dp-morale { flex: 0 0 24px; overflow: hidden; white-space: nowrap; text-align: center; font-size: 12px; }
+  .dp-sal { flex: 0 0 48px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
+  .dp-cnt { flex: 0 0 24px; overflow: hidden; white-space: nowrap; text-align: right; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); }
   .hof-career-rank { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--lcd-green); margin-left: auto; white-space: nowrap; }
   .hof-trophy-badge { font-size: 11px; }
 
@@ -975,7 +999,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v12</div>
+  <div class="name">LB_RECAP v14</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1068,6 +1092,7 @@
       <button class="tab-btn" data-view="statleaders">Stat Leaders</button>
       <button class="tab-btn" data-view="records">All-Time Records</button>
       <button class="tab-btn" data-view="powerrankings">Power Rankings</button>
+      <button class="tab-btn" data-view="draftprep">Draft Prep</button>
       <button class="tab-btn" data-view="trademachine">Trade Machine</button>
       <button class="tab-btn" data-view="coach">Coach's Corner</button>
     </div>
@@ -1084,6 +1109,7 @@
     <div class="view" id="view-statleaders"></div>
     <div class="view" id="view-records"></div>
     <div class="view" id="view-powerrankings"></div>
+    <div class="view" id="view-draftprep"></div>
     <div class="view" id="view-trademachine"></div>
     <div class="view" id="view-coach"></div>
   </div>
@@ -1695,6 +1721,12 @@ function getHeatColorForRank(rank, total) {
   return HEAT_COLORS.red;
 }
 
+const statBlock = (label, value) => `<div class="coach-stat"><div class="coach-stat-main"><div class="coach-stat-label">${esc(label)}</div><div class="coach-stat-value">${esc(value)}</div></div></div>`;
+const statBlockWithRank = (label, value, rankInfo) => {
+  const rankHtml = rankInfo ? `<div class="coach-stat-rank" style="color:${getHeatColorForRank(rankInfo.rank, rankInfo.total)};">#${esc(rankInfo.rank)}</div>` : '';
+  return `<div class="coach-stat"><div class="coach-stat-main"><div class="coach-stat-label">${esc(label)}</div><div class="coach-stat-value">${esc(value)}</div></div>${rankHtml}</div>`;
+};
+
 // League-wide rank for one team's value in a given team_stats field, among
 // all teams that have a current-season stat entry. higherIsBetter matters:
 // points allowed/turnovers/penalties rank BEST when lowest, not highest.
@@ -1708,6 +1740,109 @@ function computeTeamStatRank(rosterTeams, targetTid, field, higherIsBetter) {
   entries.sort((a, b) => higherIsBetter ? b.value - a.value : a.value - b.value);
   const idx = entries.findIndex(e => e.tid === targetTid);
   return idx === -1 ? null : { rank: idx + 1, total: entries.length };
+}
+
+// Position groupings matching the real in-game 53-man roster screen
+// exactly (confirmed against a screenshot), split into Offense and
+// Defense/Special Teams columns.
+const DRAFT_PREP_OFFENSE_POSITIONS = ['QB', 'HB', 'FB', 'TE', 'WR', 'LT', 'LG', 'C', 'RG', 'RT'];
+const DRAFT_PREP_DEFENSE_POSITIONS = ['LDE', 'LDT', 'RDT', 'RDE', 'ILB', 'OLB', 'CB', 'FS', 'SS', 'P', 'K'];
+
+function moraleToEmoji(morale) {
+  if (morale == null) return '';
+  if (morale >= 75) return '\u{1F60A}'; // happy
+  if (morale >= 50) return '\u{1F610}'; // neutral
+  return '\u{1F61F}'; // worried
+}
+
+// League-wide rank for a team's average skill within one position group -
+// a computed approximation of unit strength, since the game's own precise
+// 1-32 OFF/DEF/SP rank shown in-game isn't in the exported file (only a
+// coarse 1-5 tier bucket is).
+function computeUnitRank(rosterTeams, targetTid, positions) {
+  const entries = (rosterTeams || []).map(team => {
+    const players = (team.player || []).filter(p => positions.includes(p.position) && p.skill != null);
+    if (!players.length) return null;
+    const avg = players.reduce((sum, p) => sum + p.skill, 0) / players.length;
+    return { tid: Math.round(team.tid), avg };
+  }).filter(Boolean);
+  if (!entries.length) return null;
+  entries.sort((a, b) => b.avg - a.avg);
+  const idx = entries.findIndex(e => e.tid === targetTid);
+  return idx === -1 ? null : { rank: idx + 1, total: entries.length };
+}
+
+// Multi-signal draft need analysis for one team, working ONLY from what's
+// actually in the roster file - no draft position, no incoming prospects,
+// no scouting data exists to pull from, so this can only ever describe
+// "here's where your own roster looks thin," never predict or target
+// anything about the draft itself.
+function analyzeDraftNeeds(rosterTeams, team) {
+  const allPositions = [...DRAFT_PREP_OFFENSE_POSITIONS, ...DRAFT_PREP_DEFENSE_POSITIONS];
+
+  // League-wide average roster count per position, to detect "you have
+  // fewer bodies here than a typical team" rather than guessing a fixed
+  // number - computed from the data itself, not assumed.
+  const leagueAvgCountByPos = {};
+  allPositions.forEach(pos => {
+    const counts = (rosterTeams || []).map(t => (t.player || []).filter(p => p.position === pos).length);
+    leagueAvgCountByPos[pos] = counts.reduce((a, b) => a + b, 0) / (counts.length || 1);
+  });
+
+  const needs = [];
+  allPositions.forEach(pos => {
+    const players = (team.player || []).filter(p => p.position === pos && p.skill != null)
+      .sort((a, b) => b.skill - a.skill);
+    if (!players.length) {
+      needs.push({ position: pos, severity: 'critical', reasons: ['No player at this position at all.'] });
+      return;
+    }
+    const reasons = [];
+    const top = players[0];
+    const second = players[1];
+
+    // Weak group overall - the whole unit's league-wide rank, not just the
+    // top player - catches a fine starter sitting on genuinely bad depth,
+    // which a top-player-only check would miss entirely. Always computed
+    // and attached (not just when flagged) so the UI can show it as a
+    // badge on every card, not just the ones where it's the trigger reason.
+    const unitRank = computeUnitRank(rosterTeams, Math.round(team.tid), [pos]);
+    const weakUnit = unitRank && unitRank.rank >= Math.ceil(unitRank.total * 0.65);
+    if (top.skill < 75) reasons.push(`Best player is only ${Math.round(top.skill)} OVR.`);
+
+    // Thin depth behind the starter - a real injury-away-from-a-problem signal.
+    if (second && (top.skill - second.skill) >= 12) {
+      reasons.push(`Big drop-off after the starter (${Math.round(top.skill)} to ${Math.round(second.skill)}).`);
+    } else if (!second) {
+      reasons.push('No real backup at this position.');
+    }
+
+    // Age cliff with no succession plan - starter is older and nobody
+    // meaningfully younger is waiting behind him.
+    if (top.age != null && top.age >= 29) {
+      const youngHeir = players.slice(1).find(p => p.age != null && p.age <= top.age - 4 && p.skill >= top.skill - 15);
+      if (!youngHeir) reasons.push(`Starter is ${Math.round(top.age)} with no clear younger heir apparent.`);
+    }
+
+    // Roster-count gap vs league average depth at this position.
+    const leagueAvg = leagueAvgCountByPos[pos];
+    if (leagueAvg && players.length < leagueAvg - 1) {
+      reasons.push(`Only ${players.length} on roster here, vs. ~${leagueAvg.toFixed(1)} league-wide.`);
+    }
+
+    // Cap/contract risk - expensive, aging, contract running out, no cheap succession.
+    if (top.age != null && top.age >= 29 && top.salary != null && top.salary >= 10 && top.contract != null && top.contract <= 1) {
+      reasons.push(`Expiring contract on a $${top.salary.toFixed(1)}M, age ${Math.round(top.age)} starter - a decision point next offseason.`);
+    }
+
+    if (reasons.length || weakUnit) {
+      const effectiveCount = reasons.length + (weakUnit ? 1 : 0);
+      const severity = effectiveCount >= 3 ? 'critical' : effectiveCount === 2 ? 'moderate' : 'minor';
+      needs.push({ position: pos, severity, reasons, topPlayerSkill: top.skill, unitRank });
+    }
+  });
+
+  return needs;
 }
 
 function computeLegendBowlPowerRankings(rosterTeams) {
@@ -3212,6 +3347,7 @@ function tryBuild() {
   renderCoachsCorner();
   renderPowerRankings();
   renderTradeMachine();
+  renderDraftPrepPicker();
 
   const newLoadedGames = [];
   pairs.forEach(pair => {
@@ -3274,6 +3410,7 @@ function tryBuild() {
   renderCoachsCorner();
   renderPowerRankings();
   renderTradeMachine();
+  renderDraftPrepPicker();
 }
 
 function renderActiveGame() {
@@ -3338,6 +3475,7 @@ function removeGame(idx) {
     renderCoachsCorner();
     renderPowerRankings();
   renderTradeMachine();
+  renderDraftPrepPicker();
     return;
   }
   if (activeGameIndex === idx) activeGameIndex = Math.min(idx, loadedGames.length - 1);
@@ -3351,6 +3489,7 @@ function removeGame(idx) {
   renderCoachsCorner();
   renderPowerRankings();
   renderTradeMachine();
+  renderDraftPrepPicker();
 }
 
 document.addEventListener('click', (e) => {
@@ -4824,6 +4963,103 @@ function renderPowerRankings() {
   `;
 }
 
+function renderDraftPrepPicker() {
+  const container = document.getElementById('view-draftprep');
+  if (!container || !lastRosterTeams) return;
+  const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('');
+  container.innerHTML = `
+    <h2 class="section-title">Draft Prep</h2>
+    <div class="predict-disclaimer">Legend Bowl's draft is a live in-game event with no exportable pick order or prospect data - this can only show where YOUR current roster looks thin, not who's coming or where you'll be picking. Age, depth, and contract situations only, all computed from your actual roster file.</div>
+    <div class="card-picker" style="margin-top:14px;">
+      <select id="draft-prep-select">${options}</select>
+      <button class="load-btn ready" id="draft-prep-build-btn">SHOW</button>
+    </div>
+    <div id="draft-prep-result"></div>
+  `;
+  document.getElementById('draft-prep-build-btn').addEventListener('click', () => {
+    renderDraftPrepResult(document.getElementById('draft-prep-select').value);
+  });
+  if (teamsSorted.length) renderDraftPrepResult(teamsSorted[0].cityabbr);
+}
+
+function renderDraftPrepResult(cityabbr) {
+  const resultEl = document.getElementById('draft-prep-result');
+  if (!resultEl || !lastRosterTeams) return;
+  const team = lastRosterTeams.find(t => t.cityabbr === cityabbr);
+  if (!team) { resultEl.innerHTML = ''; return; }
+
+  const needs = analyzeDraftNeeds(lastRosterTeams, team);
+  const severityOrder = { critical: 0, moderate: 1, minor: 2 };
+  needs.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
+
+  function needCard(n) {
+    const color = n.severity === 'critical' ? '#FF4D4D' : n.severity === 'moderate' ? '#FF9F40' : '#FFE066';
+    const rankBadge = n.unitRank ? `<span class="draft-need-rank" style="color:${getHeatColorForRank(n.unitRank.rank, n.unitRank.total)};">#${esc(n.unitRank.rank)}</span>` : '';
+    return `<div class="draft-need-card" style="border-left-color:${color};">
+      <div class="draft-need-card-top">
+        <div class="draft-need-pos" style="color:${color};">${esc(n.position)}</div>
+        ${rankBadge}
+      </div>
+      <ul class="draft-need-reasons">${n.reasons.map(r => `<li>${esc(r)}</li>`).join('') || '<li>Whole position group ranks near the bottom of the league.</li>'}</ul>
+    </div>`;
+  }
+
+  const allPlayers = (team.player || []).filter(p => p.skill != null);
+  const avgOf = (field) => allPlayers.length ? (allPlayers.reduce((s, p) => s + (p[field] || 0), 0) / allPlayers.length) : 0;
+  const totalSalary = allPlayers.reduce((s, p) => s + (Number(p.salary) || 0), 0);
+
+  function positionGroupBlock(pos) {
+    const players = (team.player || []).filter(p => p.position === pos).sort((a, b) => (b.skill || 0) - (a.skill || 0));
+    if (!players.length) return '';
+    const rows = players.map(p => `<div class="dp-row">
+      <span class="dp-pos">${esc(pos)}</span>
+      <span class="dp-name">${p.captain ? '\u2B50 ' : ''}${esc(p.fname)} ${esc(p.lname)}</span>
+      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.speed || 0))};">${esc(Math.round(p.speed || 0))}</span>
+      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
+      <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
+      <span class="dp-age">${esc(p.age != null ? Math.round(p.age) : '-')}</span>
+      <span class="dp-morale">${moraleToEmoji(p.morale)}</span>
+      <span class="dp-sal">$${esc((Number(p.salary) || 0).toFixed(1))}M</span>
+      <span class="dp-cnt">${esc(p.contract != null ? Math.round(p.contract) : '-')}Y</span>
+    </div>`).join('');
+    return `<div class="dp-group">${rows}</div>`;
+  }
+
+  const header = `<div class="dp-row dp-header">
+    <span class="dp-pos">Pos</span><span class="dp-name">Name</span>
+    <span class="dp-stat">OVR</span><span class="dp-stat">SPD</span><span class="dp-stat">AGL</span><span class="dp-stat">STR</span>
+    <span class="dp-age">Age</span><span class="dp-morale">Mor</span><span class="dp-sal">Sal</span><span class="dp-cnt">Cnt</span>
+  </div>`;
+
+  resultEl.innerHTML = `
+    <div class="dp-summary-grid">
+      ${statBlock('Avg OVR', avgOf('skill').toFixed(1))}
+      ${statBlock('Avg SPD/AGL/STR', `${avgOf('speed').toFixed(0)} / ${avgOf('agility').toFixed(0)} / ${avgOf('strength').toFixed(0)}`)}
+      ${statBlock('Total Salary', `$${totalSalary.toFixed(1)}M`)}
+    </div>
+
+    <div class="aa-column-title" style="margin-top:6px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file.</p>
+    <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
+
+    <div class="aa-column-title" style="margin-top:20px;">FULL ROSTER</div>
+    <div class="dp-columns">
+      <div class="dp-column">
+        <div class="dp-column-title">OFFENSE</div>
+        ${header}
+        ${DRAFT_PREP_OFFENSE_POSITIONS.map(positionGroupBlock).join('')}
+      </div>
+      <div class="dp-column">
+        <div class="dp-column-title">DEFENSE / SPECIAL TEAMS</div>
+        ${header}
+        ${DRAFT_PREP_DEFENSE_POSITIONS.map(positionGroupBlock).join('')}
+      </div>
+    </div>
+  `;
+}
+
 function renderTradeMachine() {
   const container = document.getElementById('view-trademachine');
   if (!container) return;
@@ -5020,12 +5256,6 @@ function renderCoachsCorner() {
   const record = (w, l) => `${esc(w ?? 0)}-${esc(l ?? 0)}`;
   const cityabbr = lastRosterTeams ? (lastRosterTeams.find(t => Math.round(t.tid) === current.tid) || {}).cityabbr : null;
   const brand = cityabbr ? singleTeamBranding(cityabbr) : { primary: 'var(--panel)', secondary: 'var(--chalk)' };
-
-  const statBlock = (label, value) => `<div class="coach-stat"><div class="coach-stat-main"><div class="coach-stat-label">${esc(label)}</div><div class="coach-stat-value">${esc(value)}</div></div></div>`;
-  const statBlockWithRank = (label, value, rankInfo) => {
-    const rankHtml = rankInfo ? `<div class="coach-stat-rank" style="color:${getHeatColorForRank(rankInfo.rank, rankInfo.total)};">#${esc(rankInfo.rank)}</div>` : '';
-    return `<div class="coach-stat"><div class="coach-stat-main"><div class="coach-stat-label">${esc(label)}</div><div class="coach-stat-value">${esc(value)}</div></div>${rankHtml}</div>`;
-  };
 
   const historyHtml = history.length ? `
     <div class="aa-column-title" style="margin-top:20px;">COACHING HISTORY</div>
