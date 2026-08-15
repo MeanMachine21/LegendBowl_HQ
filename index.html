@@ -818,12 +818,16 @@
 
   .dp-summary-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; margin: 14px 0; }
 
-  .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; margin: 10px 0; }
-  .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 10px 14px; border-left: 3px solid; }
-  .draft-need-card-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
-  .draft-need-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 20px; }
-  .draft-need-pos { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 18px; }
-  .draft-need-reasons { margin: 0; padding-left: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.6; }
+  .draft-need-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 8px; margin: 10px 0; }
+  .draft-need-card { background: var(--lcd-bg); border-radius: 4px; padding: 8px 10px; border-left: 3px solid; cursor: pointer; user-select: none; }
+  .draft-need-card:hover { background: rgba(255,255,255,0.03); }
+  .draft-need-card.expanded { grid-column: 1 / -1; }
+  .draft-need-card-top { display: flex; align-items: baseline; justify-content: space-between; margin-bottom: 2px; }
+  .draft-need-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 16px; }
+  .draft-need-pos { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 15px; }
+  .draft-need-summary { font-family: 'IBM Plex Mono', monospace; font-size: 10px; color: var(--muted); display: flex; justify-content: space-between; align-items: center; gap: 6px; }
+  .draft-need-toggle { color: var(--amber); white-space: nowrap; }
+  .draft-need-reasons { margin: 8px 0 0; padding-left: 18px; font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); line-height: 1.6; }
 
   .dp-columns { display: flex; gap: 24px; margin-top: 10px; }
   .dp-column { flex: 1; min-width: 0; }
@@ -999,7 +1003,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v14</div>
+  <div class="name">LB_RECAP v15</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1696,29 +1700,31 @@ function computeStatLeaders(rosterTeams) {
 // wide default for "below average," matching how a 99-40 OVR scale
 // actually distributes (most players cluster in the 70s-80s, elite
 // players in the 90s are rare).
-const HEAT_COLORS = { green: '#39FF6A', yellow: '#FFE066', orange: '#FF9F40', red: '#FF4D4D' };
+const HEAT_COLORS = { green: '#39FF6A', yellow: '#FFE066', orange: '#FF9F40', red: '#FF4D4D', magenta: '#FF3EC9' };
 
 // Direct threshold mapping for OVR-style ratings on the real ~40-99 scale:
-// 99-93 green, 92-85 yellow, 84-75 orange, below 75 red.
+// 99-93 green, 92-85 yellow, 84-75 orange, 74-65 red, below 65 magenta.
 function getHeatColorForOvr(ovr) {
   if (ovr == null) return null;
   if (ovr >= 93) return HEAT_COLORS.green;
   if (ovr >= 85) return HEAT_COLORS.yellow;
   if (ovr >= 75) return HEAT_COLORS.orange;
-  return HEAT_COLORS.red;
+  if (ovr >= 65) return HEAT_COLORS.red;
+  return HEAT_COLORS.magenta;
 }
 
 // For a rank (1 = best) out of some total field size, converts to the
 // equivalent percentile and applies the SAME proportional band widths as
-// the OVR mapping (~10% green, ~12% yellow, ~15% orange, ~63% red) so a
-// "#2 of 32" reads with the same visual weight as a "96 OVR" would.
+// the OVR mapping so a "#2 of 32" reads with the same visual weight as a
+// "96 OVR" would.
 function getHeatColorForRank(rank, total) {
   if (rank == null || !total) return null;
   const percentileFromTop = (rank - 1) / total; // 0 = best, ~1 = worst
   if (percentileFromTop <= 0.10) return HEAT_COLORS.green;
-  if (percentileFromTop <= 0.22) return HEAT_COLORS.yellow;
-  if (percentileFromTop <= 0.37) return HEAT_COLORS.orange;
-  return HEAT_COLORS.red;
+  if (percentileFromTop <= 0.24) return HEAT_COLORS.yellow;
+  if (percentileFromTop <= 0.41) return HEAT_COLORS.orange;
+  if (percentileFromTop <= 0.58) return HEAT_COLORS.red;
+  return HEAT_COLORS.magenta;
 }
 
 const statBlock = (label, value) => `<div class="coach-stat"><div class="coach-stat-main"><div class="coach-stat-label">${esc(label)}</div><div class="coach-stat-value">${esc(value)}</div></div></div>`;
@@ -1811,9 +1817,11 @@ function analyzeDraftNeeds(rosterTeams, team) {
     if (top.skill < 75) reasons.push(`Best player is only ${Math.round(top.skill)} OVR.`);
 
     // Thin depth behind the starter - a real injury-away-from-a-problem signal.
+    // K/P excluded from the "no backup" flag specifically - real rosters
+    // normally only carry one of each, so that's not a depth problem.
     if (second && (top.skill - second.skill) >= 12) {
       reasons.push(`Big drop-off after the starter (${Math.round(top.skill)} to ${Math.round(second.skill)}).`);
-    } else if (!second) {
+    } else if (!second && pos !== 'K' && pos !== 'P') {
       reasons.push('No real backup at this position.');
     }
 
@@ -4963,6 +4971,15 @@ function renderPowerRankings() {
   `;
 }
 
+function styleDraftPrepSelect(cityabbr) {
+  const sel = document.getElementById('draft-prep-select');
+  if (!sel) return;
+  const brand = singleTeamBranding(cityabbr);
+  sel.style.background = brand.primary;
+  sel.style.color = brand.secondary;
+  sel.style.borderColor = brand.secondary;
+}
+
 function renderDraftPrepPicker() {
   const container = document.getElementById('view-draftprep');
   if (!container || !lastRosterTeams) return;
@@ -4977,10 +4994,16 @@ function renderDraftPrepPicker() {
     </div>
     <div id="draft-prep-result"></div>
   `;
+  const selectEl = document.getElementById('draft-prep-select');
+  selectEl.addEventListener('change', () => styleDraftPrepSelect(selectEl.value));
   document.getElementById('draft-prep-build-btn').addEventListener('click', () => {
-    renderDraftPrepResult(document.getElementById('draft-prep-select').value);
+    styleDraftPrepSelect(selectEl.value);
+    renderDraftPrepResult(selectEl.value);
   });
-  if (teamsSorted.length) renderDraftPrepResult(teamsSorted[0].cityabbr);
+  if (teamsSorted.length) {
+    styleDraftPrepSelect(teamsSorted[0].cityabbr);
+    renderDraftPrepResult(teamsSorted[0].cityabbr);
+  }
 }
 
 function renderDraftPrepResult(cityabbr) {
@@ -4993,15 +5016,17 @@ function renderDraftPrepResult(cityabbr) {
   const severityOrder = { critical: 0, moderate: 1, minor: 2 };
   needs.sort((a, b) => severityOrder[a.severity] - severityOrder[b.severity]);
 
-  function needCard(n) {
+  function needCard(n, idx) {
     const color = n.severity === 'critical' ? '#FF4D4D' : n.severity === 'moderate' ? '#FF9F40' : '#FFE066';
     const rankBadge = n.unitRank ? `<span class="draft-need-rank" style="color:${getHeatColorForRank(n.unitRank.rank, n.unitRank.total)};">#${esc(n.unitRank.rank)}</span>` : '';
-    return `<div class="draft-need-card" style="border-left-color:${color};">
+    const reasonsList = n.reasons.length ? n.reasons : ['Whole position group ranks near the bottom of the league.'];
+    return `<div class="draft-need-card" data-need-idx="${idx}" style="border-left-color:${color};">
       <div class="draft-need-card-top">
         <div class="draft-need-pos" style="color:${color};">${esc(n.position)}</div>
         ${rankBadge}
       </div>
-      <ul class="draft-need-reasons">${n.reasons.map(r => `<li>${esc(r)}</li>`).join('') || '<li>Whole position group ranks near the bottom of the league.</li>'}</ul>
+      <div class="draft-need-summary">${esc(reasonsList.length)} issue${reasonsList.length === 1 ? '' : 's'} <span class="draft-need-toggle">tap for details \u25BE</span></div>
+      <ul class="draft-need-reasons" style="display:none;">${reasonsList.map(r => `<li>${esc(r)}</li>`).join('')}</ul>
     </div>`;
   }
 
@@ -5034,15 +5059,15 @@ function renderDraftPrepResult(cityabbr) {
   </div>`;
 
   resultEl.innerHTML = `
-    <div class="dp-summary-grid">
+    <div class="aa-column-title" style="margin-top:6px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
+    <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
+
+    <div class="dp-summary-grid" style="margin-top:20px;">
       ${statBlock('Avg OVR', avgOf('skill').toFixed(1))}
       ${statBlock('Avg SPD/AGL/STR', `${avgOf('speed').toFixed(0)} / ${avgOf('agility').toFixed(0)} / ${avgOf('strength').toFixed(0)}`)}
       ${statBlock('Total Salary', `$${totalSalary.toFixed(1)}M`)}
     </div>
-
-    <div class="aa-column-title" style="margin-top:6px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
-    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file.</p>
-    <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
     <div class="aa-column-title" style="margin-top:20px;">FULL ROSTER</div>
     <div class="dp-columns">
@@ -5058,6 +5083,19 @@ function renderDraftPrepResult(cityabbr) {
       </div>
     </div>
   `;
+
+  if (resultEl.querySelectorAll) {
+    resultEl.querySelectorAll('.draft-need-card').forEach(card => {
+      card.addEventListener('click', () => {
+        const reasonsEl = card.querySelector('.draft-need-reasons');
+        const toggleEl = card.querySelector('.draft-need-toggle');
+        const isOpen = reasonsEl.style.display !== 'none';
+        reasonsEl.style.display = isOpen ? 'none' : 'block';
+        toggleEl.textContent = isOpen ? 'tap for details \u25BE' : 'hide details \u25B4';
+        card.classList.toggle('expanded', !isOpen);
+      });
+    });
+  }
 }
 
 function renderTradeMachine() {
