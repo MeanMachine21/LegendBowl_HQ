@@ -789,21 +789,21 @@
      problem structurally, not just cosmetically. Sticky header + scrollable
      body keeps column labels visible across all 32 rows without the tab
      growing enormously tall. */
-  .power-rankings-table-wrap { max-height: 720px; overflow-y: auto; margin-top: 14px; border: 1px solid var(--metal-1); border-radius: 4px; }
+  .power-rankings-table-wrap { max-height: 720px; overflow-y: auto; margin-top: 14px; border: 1px solid var(--metal-1); border-radius: 4px; background: var(--lcd-bg); }
   .power-rankings-table { width: 100%; border-collapse: collapse; }
   .power-rankings-table thead th {
     position: sticky; top: 0; z-index: 1;
-    background: linear-gradient(180deg, var(--metal-3) 0%, var(--metal-4) 100%);
+    background: #0a1a0a;
     font-family: 'Barlow Condensed', sans-serif; font-weight: 700; font-size: 15px; letter-spacing: 1px; text-transform: uppercase;
-    color: var(--amber); text-align: left; padding: 12px 16px; border-bottom: 2px solid var(--metal-1);
+    color: var(--amber); text-align: left; padding: 12px 16px; border-bottom: 2px solid var(--metal-5);
   }
-  .power-rankings-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.05); }
-  .power-rankings-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.02); }
+  .power-rankings-table tbody tr { border-bottom: 1px solid rgba(255,255,255,0.04); }
+  .power-rankings-table tbody tr:nth-child(even) { background: rgba(255,255,255,0.025); }
   .power-rankings-table td { padding: 12px 16px; font-family: 'IBM Plex Mono', monospace; font-size: 18px; color: var(--chalk); }
   .power-rankings-table .pr-td-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 24px; color: var(--muted); width: 60px; }
   .power-rankings-table th.pr-td-rank, .power-rankings-table th.pr-td-team, .power-rankings-table th.pr-td-record { text-align: left; }
   .power-rankings-table th.pr-td-num, .power-rankings-table th.pr-td-score { text-align: right; }
-  .power-rankings-table .pr-td-team .team-badge { font-size: 17px; padding: 6px 16px; }
+  .power-rankings-table .pr-td-team .team-badge { font-size: 19px; padding: 8px 20px; }
   .power-rankings-table .pr-td-record { font-size: 17px; color: var(--muted); }
   .power-rankings-table .pr-td-num { text-align: right; color: var(--muted); }
   .power-rankings-table .pr-td-score { text-align: right; font-weight: 700; font-size: 22px; color: var(--lcd-green); }
@@ -975,7 +975,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v11</div>
+  <div class="name">LB_RECAP v12</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
