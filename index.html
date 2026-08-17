@@ -1131,7 +1131,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v42</div>
+  <div class="name">LB_RECAP v43</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1267,6 +1267,21 @@
       <button id="offer-modal-close" class="modal-close-btn">✕</button>
     </div>
     <div class="modal-body lcd-screen" id="offer-modal-body"></div>
+  </div>
+</div>
+
+<div id="confirm-modal-backdrop" class="modal-backdrop">
+  <div class="modal-window bevel-out">
+    <div class="modal-titlebar">
+      <span id="confirm-modal-title">CONFIRM</span>
+    </div>
+    <div class="modal-body lcd-screen">
+      <div id="confirm-modal-message" class="p-note" style="font-style:normal; color:var(--chalk); margin-top:0;"></div>
+      <div style="display:flex; gap:10px; margin-top:16px;">
+        <button class="load-btn ready" id="confirm-modal-ok" style="flex:1;">Continue</button>
+        <button class="load-btn" id="confirm-modal-cancel" style="flex:1;">Cancel</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -1758,6 +1773,39 @@ function buildSwappedSlotContent(text, donorStart, donorEnd, targetPidText, targ
 // Generic client-side text-file download, matching Trade Machine's
 // existing pattern exactly - no server involved, this runs entirely in
 // the user's own browser.
+// Custom confirm modal - a drop-in async replacement for window.confirm().
+// window.confirm() is NOT safe to use repeatedly here: Chrome (and other
+// browsers) offer a "prevent this page from creating additional dialogs"
+// checkbox after a page shows a few native dialogs, and if that gets
+// checked - easy to do by accident - every future confirm() on the page
+// silently auto-returns false (as if Cancel was clicked) with NO way to
+// recover except a full page reload, which loses all in-progress
+// simulation state. This is just DOM/CSS, so it can't be suppressed that
+// way, and always has a real Cancel button that actually works.
+function showConfirm(title, message) {
+  return new Promise((resolve) => {
+    document.getElementById('confirm-modal-title').textContent = title;
+    document.getElementById('confirm-modal-message').textContent = message;
+    const backdrop = document.getElementById('confirm-modal-backdrop');
+    const okBtn = document.getElementById('confirm-modal-ok');
+    const cancelBtn = document.getElementById('confirm-modal-cancel');
+    const cleanup = (result) => {
+      backdrop.classList.remove('open');
+      okBtn.removeEventListener('click', onOk);
+      cancelBtn.removeEventListener('click', onCancel);
+      backdrop.removeEventListener('click', onBackdrop);
+      resolve(result);
+    };
+    const onOk = () => cleanup(true);
+    const onCancel = () => cleanup(false);
+    const onBackdrop = (e) => { if (e.target === backdrop) cleanup(false); };
+    okBtn.addEventListener('click', onOk);
+    cancelBtn.addEventListener('click', onCancel);
+    backdrop.addEventListener('click', onBackdrop);
+    backdrop.classList.add('open');
+  });
+}
+
 function downloadTextFile(text, filename, mimeType) {
   const blob = new Blob([text], { type: mimeType || 'text/plain' });
   const url = URL.createObjectURL(blob);
@@ -3007,7 +3055,7 @@ function analyzeDraftNeeds(rosterTeams, team) {
 
     // Cap/contract risk - expensive, aging, contract running out, no cheap succession.
     if (top.age != null && top.age >= 29 && top.salary != null && top.salary >= 10 && top.contract != null && top.contract <= 1) {
-      reasons.push(`Expiring contract on a $${top.salary.toFixed(1)}M, age ${Math.round(top.age)} starter - a decision point next offseason.`);
+      reasons.push(`Expiring contract on a $${(Number(top.salary) || 0).toFixed(1)}M, age ${Math.round(top.age)} starter - a decision point next offseason.`);
     }
 
     if (reasons.length || weakUnit) {
@@ -6290,39 +6338,39 @@ function renderFreeAgency() {
 
   const tabBtn = document.querySelector('.tab-btn[data-view="freeagency"]');
   const offSeason = isOffSeason(lastScheduleRows);
-
-  if (offSeason === false) {
-    // A real game (or playoff round) is still pending somewhere in the
-    // schedule - Free Agency only makes sense between seasons, so block
-    // it here rather than let the user build a plan against a roster
-    // that's about to keep playing games.
-    if (tabBtn) { tabBtn.classList.add('tab-disabled'); tabBtn.title = 'Free Agency is only available in the off-season - this save still has games left to play.'; }
-    faSimState = null;
-    container.innerHTML = `
-      <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
-      <div class="predict-disclaimer" style="border-left-color:#FF9F40;">
-        <strong style="color:#FF9F40;">Not available yet.</strong> Free Agency only makes sense between seasons - after every game, including the full playoffs and Super Bowl, has actually been played, and before the next season's schedule is generated. Your loaded schedule.txt still has real games left unplayed. Finish out the season in-game, save between seasons, and reload here.
-      </div>
-    `;
-    return;
-  }
+  // The tab itself is always clickable now - mid-season shows a
+  // browse-only preview of who's coming up, so you can start
+  // strategizing, without letting anyone actually make offers before
+  // it's really the off-season.
   if (tabBtn) { tabBtn.classList.remove('tab-disabled'); tabBtn.title = ''; }
+
   if (offSeason == null) {
     container.innerHTML = `
       <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
-      <div class="predict-disclaimer">Load a schedule.txt export alongside your roster so this tool can confirm you're between seasons before enabling Free Agency.</div>
+      <div class="predict-disclaimer">Load a schedule.txt export alongside your roster so this tool can confirm whether you're in-season or between seasons.</div>
     `;
     return;
   }
 
+  const scoutingOnly = offSeason === false;
+  if (scoutingOnly) faSimState = null; // no active simulation can exist outside the real off-season window
+
   const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
   const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('');
+  const bannerHtml = scoutingOnly
+    ? `<div class="predict-disclaimer" style="border-left-color:#FF9F40;">
+        <strong style="color:#FF9F40;">Regular season - preview only.</strong> You can browse who's about to hit free agency and start strategizing, but making real offers only unlocks once you reach the off-season (every game, including the full playoffs, actually played).
+      </div>`
+    : `<div class="predict-disclaimer">
+        <strong style="color:#FFC93C;">Timing matters:</strong> enter this tab AFTER the in-game Free Agency step has already run for this offseason, but BEFORE you hit Progression - that's the one window where this tool's view of your roster actually matches the game's. This is a house-rule simulation layered on top of your save - it does NOT read or write any real Legend Bowl mechanic on its own, and nothing here changes your actual save file until you explicitly download an export. The signing cap is computed from your league's real payroll numbers; the asking-price and interest estimates use real soft-trait fields (greed, loyalty, work ethic) but the dollar weights and AI team logic are a first-draft heuristic, not something the save file can confirm. Press "Start Simulation" below to run a full 5-round cycle with AI-controlled other teams.
+      </div>`;
+
   container.innerHTML = `
     <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
-    <div class="predict-disclaimer">This is a house-rule simulation layered on top of your save - it does NOT read or write any real Legend Bowl mechanic, and nothing here changes your actual save file. The signing cap is computed from your league's real payroll numbers; the asking-price and interest estimates use real soft-trait fields (greed, loyalty, work ethic) but the dollar weights and AI team logic are a first-draft heuristic, not something the save file can confirm. Treat it as a planning tool, not gospel - press "Start Simulation" below to run a full 5-round cycle with AI-controlled other teams.</div>
+    ${bannerHtml}
     <div class="card-picker" style="margin-top:14px;">
       <select id="fa-team-select">${options}</select>
-      <button class="load-btn ready" id="fa-team-build-btn">SHOW MY CAP</button>
+      <button class="load-btn ready" id="fa-team-build-btn">${scoutingOnly ? 'PREVIEW' : 'SHOW MY CAP'}</button>
     </div>
     <div id="fa-result"></div>
   `;
@@ -6412,7 +6460,8 @@ function renderFreeAgencyResult(cityabbr) {
   const team = lastRosterTeams.find(t => t.cityabbr === cityabbr);
   if (!team) { resultEl.innerHTML = ''; return; }
 
-  const simActive = faSimState && faSimState.myTeamCity === cityabbr;
+  const scoutingOnly = isOffSeason(lastScheduleRows) === false;
+  const simActive = !scoutingOnly && faSimState && faSimState.myTeamCity === cityabbr;
 
   // Both the dollar cap AND the new-offer-count limit are now evaluated
   // LIVE against every team's current payroll standing (via state), not
@@ -6423,7 +6472,7 @@ function renderFreeAgencyResult(cityabbr) {
   // spent or how high it climbed - confirmed happening in testing (a
   // team starting at rank #11, below the cap threshold, finished at #5
   // with no resistance at all). Recomputing live closes that gap.
-  const signingCap = computeSigningCap(team, lastRosterTeams, simActive ? faSimState : null);
+  const signingCap = scoutingOnly ? null : computeSigningCap(team, lastRosterTeams, simActive ? faSimState : null);
   let capHtml = '';
   if (signingCap) {
     const tierColor = signingCap.tier === 'hard' ? '#FF4D4D' : signingCap.tier === 'soft' ? '#FF9F40' : '#39FF6A';
@@ -6452,7 +6501,7 @@ function renderFreeAgencyResult(cityabbr) {
   }
 
   if (!simActive) {
-    renderFaBrowseMode(resultEl, team, capHtml);
+    renderFaBrowseMode(resultEl, team, capHtml, scoutingOnly);
   } else {
     renderFaSimMode(resultEl, team, capHtml);
   }
@@ -6461,7 +6510,7 @@ function renderFreeAgencyResult(cityabbr) {
 // Pure browsing - the whole league-wide UFA board, no round structure,
 // just exploration + the live what-if offer modal (preview only, doesn't
 // queue anything until a simulation is actually started).
-function renderFaBrowseMode(resultEl, team, capHtml) {
+function renderFaBrowseMode(resultEl, team, capHtml, scoutingOnly) {
   const ufas = [];
   (lastRosterTeams || []).forEach(t => {
     (t.player || []).filter(isUnrestrictedFreeAgent).forEach(p => {
@@ -6475,7 +6524,9 @@ function renderFaBrowseMode(resultEl, team, capHtml) {
   const boardHtml = buildFaTwoColumnBoardHtml(sorted, team, null);
   window.__faTargetTeam = team;
 
-  resultEl.innerHTML = `
+  resultEl.innerHTML = scoutingOnly ? `
+    ${boardHtml}
+  ` : `
     ${buildFaSalarySummaryHtml(team, null)}
     ${boardHtml}
     ${capHtml}
@@ -6485,10 +6536,12 @@ function renderFaBrowseMode(resultEl, team, capHtml) {
     </div>
   `;
 
-  document.getElementById('fa-start-sim-btn').addEventListener('click', () => {
-    faInitSimulation(team.cityabbr);
-    renderFreeAgencyResult(team.cityabbr);
-  });
+  if (!scoutingOnly) {
+    document.getElementById('fa-start-sim-btn').addEventListener('click', () => {
+      faInitSimulation(team.cityabbr);
+      renderFreeAgencyResult(team.cityabbr);
+    });
+  }
   wireFaBoardClicks(resultEl, team, null);
 }
 
@@ -6738,7 +6791,7 @@ function renderFaSimMode(resultEl, team, capHtml) {
       renderFreeAgencyResult(team.cityabbr);
     });
   });
-  document.getElementById('fa-advance-round-btn').addEventListener('click', () => {
+  document.getElementById('fa-advance-round-btn').addEventListener('click', async () => {
     // Warn before advancing if there are still unresolved pending UFAs on
     // your own team with no offer queued this round - easy to lose track
     // of, and the consequence (auto-swapped for often a much lower-value
@@ -6752,7 +6805,8 @@ function renderFaSimMode(resultEl, team, capHtml) {
       const warning = isLastRound
         ? `You have ${unaddressed.length} pending free agent(s) with no offer queued. This is the LAST round - any still unsigned after this get auto-swapped away for a replacement (often a lower-value player), which can meaningfully hit your payroll. Advance anyway?`
         : `You have ${unaddressed.length} pending free agent(s) with no offer queued this round. If they're never re-signed by the end of Round 5, they'll be auto-swapped away for a replacement (often lower-value). Advance anyway?`;
-      if (!window.confirm(warning)) return;
+      const proceed = await showConfirm('UNRESOLVED FREE AGENTS', warning);
+      if (!proceed) return;
     }
     faAdvanceRound(state);
     renderFreeAgencyResult(team.cityabbr);
@@ -8207,7 +8261,16 @@ document.getElementById('modal-close').addEventListener('click', closePlayerModa
 document.getElementById('player-modal-backdrop').addEventListener('click', (e) => {
   if (e.target.id === 'player-modal-backdrop') closePlayerModal();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePlayerModal(); closeOfferModal(); } });
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape') {
+    closePlayerModal();
+    closeOfferModal();
+    const confirmBackdrop = document.getElementById('confirm-modal-backdrop');
+    if (confirmBackdrop && confirmBackdrop.classList.contains('open')) {
+      document.getElementById('confirm-modal-cancel').click(); // real click, so the awaiting Promise actually resolves - just hiding the element would leave it hanging forever
+    }
+  }
+});
 
 document.addEventListener('click', (e) => {
   const link = e.target.closest('.player-link');
