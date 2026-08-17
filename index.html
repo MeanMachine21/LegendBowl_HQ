@@ -438,6 +438,8 @@
     background: radial-gradient(circle at 35% 30%, #baffc9, var(--lcd-green) 75%);
     box-shadow: 0 0 5px 1px rgba(57,255,106,0.9), 0 0 10px 2px rgba(57,255,106,0.5), inset 0 1px 1px rgba(255,255,255,0.4);
   }
+  .tab-btn.tab-disabled { opacity: 0.4; cursor: not-allowed; }
+  .tab-btn.tab-disabled:hover { filter: none; border-color: var(--metal-1); }
   .view { display: none; }
   .view.active {
     display: block;
@@ -613,6 +615,82 @@
   .p-stat-grid .k { color: var(--lcd-green-dim); }
   .p-stat-grid .v { color: var(--lcd-green); text-align: right; }
   .p-note { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--lcd-green-dim); font-style: italic; margin-top: 10px; }
+
+  .offer-slider-row { margin: 10px 0; }
+  .offer-slider-row label { display: block; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); margin-bottom: 4px; }
+  .offer-slider-row input[type="range"] { width: 100%; accent-color: var(--amber); }
+  .offer-reaction-box { display: flex; align-items: center; gap: 14px; background: var(--lcd-bg); border-radius: 6px; padding: 14px; margin-top: 6px; }
+  .offer-reaction-arrow { font-size: 40px; line-height: 1; font-weight: 800; }
+  .offer-reaction-label { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 20px; text-transform: uppercase; letter-spacing: 0.5px; }
+
+  .fa-start-sim-box { background: var(--lcd-bg); border-radius: 6px; padding: 14px; margin: 14px 0; text-align: center; }
+  .fa-pending-row {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); padding: 5px 0;
+    border-bottom: 1px solid rgba(255,255,255,0.06);
+  }
+  .fa-pending-row:last-child { border-bottom: none; }
+  .fa-pending-remove {
+    background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 6px; cursor: pointer;
+  }
+  .fa-pending-remove:hover { color: #FF4D4D; border-color: #FF4D4D; }
+  .fa-recap-list { list-style: none; padding: 0; margin: 6px 0; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); line-height: 1.9; }
+  .fa-breaking-news { background: rgba(255,61,113,0.12); border: 1px solid #FF3D71; border-radius: 6px; padding: 12px 14px; margin: 10px 0; }
+  .fa-breaking-news-label { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 900; font-size: 16px; letter-spacing: 1px; color: #FF3D71; margin-bottom: 6px; }
+  .fa-breaking-news-item { font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--chalk); padding: 3px 0; }
+  .fa-roster-pos-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; font-weight: 700; letter-spacing: 0.5px; padding: 4px 0; }
+  .fa-sort-header { cursor: pointer; user-select: none; }
+  .fa-position-filter { display: flex; align-items: center; gap: 8px; margin: 12px 0 4px; font-family: 'IBM Plex Mono', monospace; font-size: 12px; color: var(--muted); }
+  .fa-position-filter select {
+    background: var(--lcd-bg); color: var(--chalk); border: 1px solid var(--line); border-radius: 4px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 12px; padding: 4px 8px;
+  }
+  .fa-sort-header:hover { color: var(--amber); }
+  .fa-sort-header.active { color: var(--amber); }
+
+  .fa-salary-summary { background: var(--lcd-bg); border-radius: 6px; padding: 14px 16px; margin: 14px 0; position: sticky; top: 6px; z-index: 6; box-shadow: 0 4px 14px rgba(0,0,0,0.5); }
+  .fa-salary-summary-top { display: flex; align-items: baseline; justify-content: space-between; flex-wrap: wrap; gap: 8px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; margin-bottom: 10px; }
+  .fa-salary-summary-total { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 900; font-size: 32px; color: #39FF6A; }
+  .fa-salary-summary-rank { font-family: 'IBM Plex Mono', monospace; font-size: 13px; color: var(--chalk); }
+  .fa-salary-group-row { display: flex; flex-wrap: wrap; gap: 10px; }
+  .fa-salary-group-badge { text-align: center; min-width: 46px; }
+  .fa-salary-group-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; }
+  .fa-salary-group-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 18px; }
+
+  .fa-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
+  @media (max-width: 900px) { .fa-two-col { grid-template-columns: 1fr; } }
+  .fa-col-banner {
+    font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 16px;
+    text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; border-radius: 6px 6px 0 0;
+  }
+  .fa-col-banner-neutral { background: var(--lcd-bg); color: var(--muted); }
+  .fa-name-offered { background: rgba(255, 201, 60, 0.25); border-radius: 3px; padding: 1px 4px; margin: -1px -4px; }
+  .fa-name-cut { background: rgba(255, 77, 77, 0.28); border-radius: 3px; padding: 1px 4px; margin: -1px -4px; text-decoration: line-through; text-decoration-color: rgba(255,77,77,0.6); }
+  .fa-name-threatened { background: rgba(255, 159, 64, 0.32); border-radius: 3px; padding: 1px 4px; margin: -1px -4px; font-weight: 700; animation: fa-threat-pulse 1.6s ease-in-out infinite; }
+  @keyframes fa-threat-pulse { 0%, 100% { background: rgba(255, 159, 64, 0.32); } 50% { background: rgba(255, 159, 64, 0.55); } }
+
+  .fa-row-actions { flex: 0 0 74px; display: flex; gap: 3px; }
+  .fa-quick-min, .fa-quick-cut {
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 5px; border-radius: 3px;
+    border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; flex: 1 1 auto; text-align: center;
+  }
+  .fa-quick-min:hover { color: #39FF6A; border-color: #39FF6A; }
+  .fa-quick-cut:hover, .fa-quick-cut.active { color: #FF4D4D; border-color: #FF4D4D; }
+  .fa-quick-cut.active { background: rgba(255,77,77,0.15); }
+  .fa-cut-undo {
+    background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 3px;
+    font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 6px; cursor: pointer;
+  }
+  .fa-cut-undo:hover { color: #39FF6A; border-color: #39FF6A; }
+  .fa-notes-icons { flex: 0 0 40px; text-align: center; font-size: 15px; letter-spacing: 1px; }
+  .fa-team-bubble {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+    padding: 2px 6px; border-radius: 10px; line-height: 1.3;
+  }
+  .fa-trait-row { display: flex; justify-content: space-between; align-items: baseline; font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 6px; }
+  .fa-trait-name { color: var(--chalk); text-transform: uppercase; letter-spacing: 0.5px; }
+  .fa-trait-val { font-weight: 700; }
   .trophy-case { display: flex; flex-wrap: wrap; gap: 6px; margin: 10px 0 4px; }
   .trophy {
     display: flex; align-items: center; gap: 4px;
@@ -1053,7 +1131,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v23</div>
+  <div class="name">LB_RECAP v41</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1148,6 +1226,7 @@
       <button class="tab-btn" data-view="powerrankings">Power Rankings</button>
       <button class="tab-btn" data-view="draftprep">Draft Prep</button>
       <button class="tab-btn" data-view="trademachine">Trade Machine</button>
+      <button class="tab-btn" data-view="freeagency">Free Agency <span style="font-size:9px; opacity:0.7;">BETA</span></button>
       <button class="tab-btn" data-view="coach">Coach's Corner</button>
     </div>
 
@@ -1165,6 +1244,7 @@
     <div class="view" id="view-powerrankings"></div>
     <div class="view" id="view-draftprep"></div>
     <div class="view" id="view-trademachine"></div>
+    <div class="view" id="view-freeagency"></div>
     <div class="view" id="view-coach"></div>
   </div>
 
@@ -1177,6 +1257,16 @@
       <button id="modal-close" class="modal-close-btn">✕</button>
     </div>
     <div class="modal-body lcd-screen" id="modal-body"></div>
+  </div>
+</div>
+
+<div id="offer-modal-backdrop" class="modal-backdrop">
+  <div class="modal-window bevel-out">
+    <div class="modal-titlebar">
+      <span>MAKE AN OFFER</span>
+      <button id="offer-modal-close" class="modal-close-btn">✕</button>
+    </div>
+    <div class="modal-body lcd-screen" id="offer-modal-body"></div>
   </div>
 </div>
 
@@ -1665,6 +1755,21 @@ function buildSwappedSlotContent(text, donorStart, donorEnd, targetPidText, targ
 // Swaps two players' full identities (name, ratings, salary, contract,
 // stats history, appearance - everything) while their pid and tid stay
 // fixed to their original roster slot.
+// Generic client-side text-file download, matching Trade Machine's
+// existing pattern exactly - no server involved, this runs entirely in
+// the user's own browser.
+function downloadTextFile(text, filename, mimeType) {
+  const blob = new Blob([text], { type: mimeType || 'text/plain' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
 function swapPlayersInRosterText(text, pidA, pidB) {
   const blockA = findPlayerBlockByPid(text, pidA);
   const blockB = findPlayerBlockByPid(text, pidB);
@@ -1686,6 +1791,208 @@ function swapPlayersInRosterText(text, pidA, pidB) {
   let result = text.slice(0, second.start) + newContentForSecondSlot + text.slice(second.end);
   result = result.slice(0, first.start) + newContentForFirstSlot + result.slice(first.end);
   return result;
+}
+
+// =====================================================================
+// FREE AGENCY EXPORT: writing the simulation's outcome back into a real
+// roster_user.json (and hof.txt) the user can load back into the game.
+// Reuses the exact same text-surgical machinery as Trade Machine above -
+// a Free Agency signing IS a trade, mechanically: pid/tid stay fixed to
+// the roster slot, everything else about the player moves. The only
+// addition Trade Machine doesn't need is updating the CONTRACT terms
+// (salary/years) for a genuine new signing, since a trade doesn't
+// renegotiate a deal but a free-agent signing does.
+// =====================================================================
+
+// Same walk as findTopLevelFieldValueSpan, but for fields that can be
+// stored EITHER as a bare number ("salary":1.6) OR, inconsistently, as a
+// quoted numeric string ("salary":"1.6") - confirmed both formats exist
+// for the same field within the same file (532 of ~1800 salary fields
+// were quoted strings in a real save). The original bare-number-only
+// version silently returned a zero-width span whenever it hit a quote
+// character, which turned every edit into a pure INSERTION instead of a
+// replacement and corrupted the file - caught by the JSON re-parse
+// safety check before ever reaching a real save. This version detects
+// which format is actually present and spans it correctly either way.
+function findFlexibleNumericValueSpan(text, blockStart, blockEnd, fieldName) {
+  let depth = 0, inString = false, escaped = false;
+  const pattern = '"' + fieldName + '":';
+  for (let i = blockStart; i < blockEnd; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) { escaped = false; }
+      else if (ch === '\\') { escaped = true; }
+      else if (ch === '"') { inString = false; }
+      continue;
+    }
+    if (ch === '"') {
+      if (depth === 1 && text.startsWith(pattern, i)) {
+        const valueStart = i + pattern.length;
+        let vs = valueStart;
+        while (/\s/.test(text[vs])) vs++;
+        if (text[vs] === '"') {
+          // Quoted numeric string - span the WHOLE literal, quotes included.
+          let ve = vs + 1, innerEscaped = false;
+          while (ve < blockEnd) {
+            if (innerEscaped) { innerEscaped = false; ve++; continue; }
+            if (text[ve] === '\\') { innerEscaped = true; ve++; continue; }
+            if (text[ve] === '"') { ve++; break; }
+            ve++;
+          }
+          return { start: vs, end: ve, wasQuoted: true };
+        }
+        let ve = vs;
+        while (ve < blockEnd && /[-\d.eE+]/.test(text[ve])) ve++;
+        return { start: vs, end: ve, wasQuoted: false };
+      }
+      inString = true;
+      continue;
+    }
+    if (ch === '{' || ch === '[') depth++;
+    else if (ch === '}' || ch === ']') depth--;
+  }
+  throw new Error('Field "' + fieldName + '" not found in block');
+}
+
+// Same pattern as buildSwappedSlotContent, but for a straight in-place
+// edit of one player's own salary/contract fields - used after a signing
+// (not a trade) to reflect the NEW negotiated terms, on top of whichever
+// physical slot that player's data now occupies post-swap. Salary is
+// rounded to 2 decimal places (confirmed fine to do) rather than trying
+// to replicate the game's own float-precision noise.
+function updatePlayerContractInRosterText(text, pid, newSalary, newYears) {
+  const block = findPlayerBlockByPid(text, pid);
+  const salarySpan = findFlexibleNumericValueSpan(text, block.start, block.end, 'salary');
+  const contractSpan = findFlexibleNumericValueSpan(text, block.start, block.end, 'contract');
+  const roundedSalary = Math.round(newSalary * 100) / 100;
+  const roundedYears = Math.max(1, Math.round(newYears));
+  const salaryValueText = salarySpan.wasQuoted ? `"${roundedSalary}"` : String(roundedSalary);
+  const contractValueText = contractSpan.wasQuoted ? `"${roundedYears}.0"` : `${roundedYears}.0`;
+  const edits = [
+    { span: salarySpan, value: salaryValueText },
+    { span: contractSpan, value: contractValueText },
+  ].sort((a, b) => b.span.start - a.span.start); // later edit first, so earlier spans' indices stay valid
+  let result = text;
+  edits.forEach(e => { result = result.slice(0, e.span.start) + e.value + result.slice(e.span.end); });
+  return result;
+}
+
+// hof.txt is a plain TSV, not JSON - no balanced-brace parsing needed,
+// just find rows whose pid column matches and rewrite that one field.
+// Swaps pidA<->pidB (mirrors the roster swap exactly) so any past award
+// keeps pointing at the SAME player, even though that player's data now
+// lives at a different pid after the trade.
+function swapHofPidReferences(hofRawText, pidA, pidB) {
+  if (!hofRawText) return hofRawText;
+  const lines = hofRawText.split(/\r\n|\r|\n/);
+  if (!lines.length) return hofRawText;
+  const header = lines[0].split('\t');
+  const pidCol = header.indexOf('pid');
+  if (pidCol === -1) return hofRawText;
+  for (let i = 1; i < lines.length; i++) {
+    if (!lines[i].trim()) continue;
+    const cols = lines[i].split('\t');
+    if (cols[pidCol] === String(pidA)) { cols[pidCol] = String(pidB); lines[i] = cols.join('\t'); }
+    else if (cols[pidCol] === String(pidB)) { cols[pidCol] = String(pidA); lines[i] = cols.join('\t'); }
+  }
+  return lines.join('\r\n');
+}
+
+// Every hof.txt row currently crediting this pid - used both to drive the
+// remap above and to flag a "Hall of Famer traded" moment for the recap.
+function findHofAwardsForPid(hofRawText, pid) {
+  if (!hofRawText) return [];
+  const lines = hofRawText.split(/\r\n|\r|\n/).filter(l => l.trim());
+  if (!lines.length) return [];
+  const header = lines[0].split('\t');
+  const pidCol = header.indexOf('pid');
+  const trophyCol = header.indexOf('trophy_text');
+  const nameCol = header.indexOf('name');
+  const yearCol = header.indexOf('year');
+  if (pidCol === -1) return [];
+  const awards = [];
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split('\t');
+    if (cols[pidCol] === String(pid)) {
+      awards.push({ year: cols[yearCol], trophy: cols[trophyCol], name: cols[nameCol] });
+    }
+  }
+  return awards;
+}
+
+// Replays a completed Free Agency simulation's ENTIRE signings history
+// (state.signings, already in true chronological order since every
+// faExecuteSwap call is immediately followed by its signings.push in the
+// same synchronous block) against the raw save text - starting from
+// whatever rosterText/hofText currently are (already reflects any
+// earlier Trade Machine edits this session, same chaining behavior Trade
+// Machine itself uses) rather than a pristine re-upload.
+//
+// Each signing entry bundles its own swap AND (for a real signing, not a
+// cut-replacement/unresolved-departure trade) its own contract update -
+// processing them one entry at a time, in array order, is what
+// guarantees correctness for a player who moves more than once across
+// the simulation: a naive "replay all swaps, then apply all contract
+// edits" approach was tried and rejected here, because a player's data
+// could move AGAIN in a later swap before a stale contract edit reached
+// them, silently overwriting the wrong player's salary.
+function buildFreeAgencyExport(state) {
+  let newRosterText = rosterText;
+  let newHofText = hofText;
+  const hofTradeNews = []; // {pid, awards} for any HOF-award-holder whose pid moved
+
+  // The simulation tracks players by their own native pid moving between
+  // team rosters (correctly handles a player being involved in more than
+  // one swap across the simulation - confirmed happening in testing: a
+  // give-back player got reused as a give-back again in a LATER,
+  // unrelated signing). But the text file's pid/tid are tied to a fixed
+  // SLOT, not a player - a "trade" there means swapping CONTENT between
+  // two slots while both keep their own pid/tid. Those two models
+  // diverge exactly in the multi-hop case: if a second swap used this
+  // player's ORIGINAL native pid to find them, it would actually hit
+  // whichever slot their data was left in FIRST, not chase where they'd
+  // moved to since. This map tracks, for each native pid, which slot
+  // their data currently physically occupies, updated after every swap -
+  // so a second hop always finds them at their true current location.
+  const currentSlotForNativePid = {};
+  const slotFor = (nativePid) => currentSlotForNativePid[nativePid] || nativePid;
+
+  state.signings.forEach(signing => {
+    const signedNativePid = String(signing.pid);
+    if (!signing.giveBack) {
+      // Same-team re-sign - no roster move, just a contract update at
+      // wherever this player's data currently lives.
+      if (!signing.isCutReplacement && !signing.isUnresolvedDeparture) {
+        newRosterText = updatePlayerContractInRosterText(newRosterText, slotFor(signedNativePid), signing.salary, signing.years);
+      }
+      return;
+    }
+    const giveBackNativePid = String(signing.giveBack.pid);
+    const slotA = slotFor(signedNativePid);
+    const slotB = slotFor(giveBackNativePid);
+
+    [slotA, slotB].forEach(slotPid => {
+      const awards = findHofAwardsForPid(newHofText, slotPid);
+      if (awards.length) hofTradeNews.push({ pid: slotPid, awards });
+    });
+
+    newRosterText = swapPlayersInRosterText(newRosterText, slotA, slotB);
+    if (newHofText) newHofText = swapHofPidReferences(newHofText, slotA, slotB);
+
+    // After this swap: the signed player's data now sits at slotB, and
+    // the give-back's data now sits at slotA - record both, so a later
+    // hop involving either of them finds the right place.
+    currentSlotForNativePid[signedNativePid] = slotB;
+    currentSlotForNativePid[giveBackNativePid] = slotA;
+
+    // A cut-replacement/unresolved-departure is a pure trade - no new
+    // contract, matching how a real trade keeps the existing deal.
+    if (!signing.isCutReplacement && !signing.isUnresolvedDeparture) {
+      newRosterText = updatePlayerContractInRosterText(newRosterText, slotB, signing.salary, signing.years);
+    }
+  });
+
+  return { rosterText: newRosterText, hofText: newHofText, hofTradeNews };
 }
 
 // Current-season stat leaders, mirroring the same categories used
@@ -1931,6 +2238,662 @@ function computeRunPassIdentity(rosterTeams, team) {
     else if (pct >= 0.67) label = 'Pass-Leaning';
   }
   return { designedRushPct: team.rush_percentage, rank, actualRushPct, label };
+}
+
+// =====================================================================
+// FREE AGENCY MODE (prototype / v1)
+//
+// This is a house-rule layer that exists ONLY inside this tool - it does
+// not read or write any real game mechanic, and Legend Bowl itself has no
+// concept of a "signing cap." Nothing here should ever be confused with
+// real save data. Two pieces:
+//   1. Signing cap (computeSigningCap) - grounded entirely in real payroll
+//      numbers from the roster file. Fully data-driven, no invented stats.
+//   2. Asking-price estimate (estimateFreeAgentAsk) - a first-draft
+//      heuristic built from real soft-trait fields (pers_greed,
+//      pers_loyalty, etc.), but the WEIGHTS connecting those traits to a
+//      dollar figure are a judgment call, not something derivable from
+//      the save file. Treat these numbers as a starting point to tune
+//      against how your league actually plays out, not ground truth.
+// =====================================================================
+
+function computeTeamPayroll(team) {
+  return (team.player || []).reduce((sum, p) => sum + (Number(p.salary) || 0), 0);
+}
+
+// League payroll distribution, sorted highest to lowest, so any team can
+// find its own percentile - the actual basis for the signing cap tiers.
+// Pass the active simulation state to reflect LIVE payrolls (every team's
+// signings-in-progress, not just yours) instead of the frozen pre-FA
+// snapshot. This matters: without it, a team starting just below a cap
+// threshold could spend freely and climb the entire simulation with zero
+// resistance, since the cap would only ever be evaluated once at the
+// start. Confirmed exactly this happening in testing - a team starting
+// at rank #11 (below the 75th percentile cutoff) had no cap at all and
+// finished at #5 with zero friction.
+function computeLeaguePayrolls(rosterTeams, state) {
+  const entries = (rosterTeams || []).map(t => ({ tid: Math.round(t.tid), city: t.cityabbr, payroll: state ? faTeamTotalPayroll(t, state) : computeTeamPayroll(t) }));
+  entries.sort((a, b) => b.payroll - a.payroll); // rank 1 = highest payroll in the league
+  return entries;
+}
+
+// Tiered signing-budget cap for NEW free agent contracts this cycle, based
+// on where a team's CURRENT payroll sits in the league (percentile rank).
+// The baseline dollar figure (leagueAvgPayroll) is real; the percentage
+// cutoffs and multipliers below are the tunable "house rule" part - these
+// are reasonable first-draft numbers, not something the save file can
+// verify for us. Also computes maxNewOffers: a hard cap on how many
+// NEW-team (poaching) offers a team can make this cycle, scaling down to
+// ZERO right at the #1 payroll spot. This exists because the dollar cap
+// alone isn't enough - a team could spend just under its dollar limit on
+// a large volume of medium contracts and still hoover up the market. Re-
+// signing your OWN pending free agents never counts against this - only
+// offers on someone else's player do.
+function computeSigningCap(team, rosterTeams, state) {
+  const payrolls = computeLeaguePayrolls(rosterTeams, state);
+  const total = payrolls.length;
+  if (!total) return null;
+  const leagueAvgPayroll = payrolls.reduce((s, e) => s + e.payroll, 0) / total;
+  const idx = payrolls.findIndex(e => e.tid === Math.round(team.tid));
+  if (idx === -1) return null;
+  const rank = idx + 1; // 1 = highest payroll
+  const percentile = 1 - (idx / total); // 1.0 = highest payroll, 0 = lowest
+  const ownPayroll = payrolls[idx].payroll;
+
+  const baseline = leagueAvgPayroll * 0.15; // assumption: ~15% of average payroll is a typical one-cycle UFA spend - TUNE THIS
+
+  let cap = null; // null = uncapped
+  let tier = 'none';
+  if (percentile >= 0.90) {
+    // Top 10% - hard cap, scales down further the closer to the #1 payroll in the league.
+    const topBracketProgress = (percentile - 0.90) / 0.10; // 0 at the 90th pct line, 1 at the very top
+    const multiplier = 0.40 - (0.25 * topBracketProgress); // 0.40 down to 0.15
+    cap = baseline * multiplier;
+    tier = 'hard';
+  } else if (percentile >= 0.75) {
+    // 75th-90th percentile - soft cap.
+    cap = baseline * 0.6;
+    tier = 'soft';
+  }
+
+  // New-team (poaching) offer count limit. Below the 50th percentile,
+  // unrestricted. Tightens through the same bracket lines as the dollar
+  // cap, ending at exactly ZERO new offers for the #1 payroll in the
+  // league - the richest team in the league shouldn't be able to make
+  // even one poaching play, only re-sign its own guys.
+  let maxNewOffers = null; // null = unlimited
+  if (percentile >= 0.90) {
+    const topBracketProgress = (percentile - 0.90) / 0.10;
+    maxNewOffers = Math.max(0, Math.round(2 * (1 - topBracketProgress))); // 2 down to 0
+  } else if (percentile >= 0.75) {
+    maxNewOffers = 3;
+  } else if (percentile >= 0.50) {
+    maxNewOffers = 6;
+  }
+
+  return { rank, total, percentile, ownPayroll, leagueAvgPayroll, cap, tier, maxNewOffers };
+}
+
+// League-wide rank of one player's skill among every player at their exact
+// position - used to identify "top-10-at-position" players for the
+// asking-price bump, distinct from computeUnitRank (which ranks a TEAM's
+// average, not one player).
+function computePlayerPositionRank(rosterTeams, position, skill) {
+  const allSkills = (rosterTeams || [])
+    .flatMap(t => (t.player || []).filter(p => p.position === position && p.skill != null).map(p => p.skill));
+  allSkills.sort((a, b) => b - a);
+  const rank = allSkills.filter(s => s > skill).length + 1;
+  return { rank, total: allSkills.length };
+}
+
+// How many Elite (top-10-at-position) players sit on a team's roster -
+// how a "Winner" player reads whether a team is actually built to win
+// now. Uses the permanent original roster, not the live in-simulation
+// one - positional elite rank never changes within a session and a
+// stable read is more defensible than one that jitters round to round.
+// Cached per team since it's the same expensive-ish scan every time.
+const __faEliteCountCache = {};
+function faCountEliteOnRoster(team) {
+  if (__faEliteCountCache[team.cityabbr] != null) return __faEliteCountCache[team.cityabbr];
+  const count = (team.player || []).filter(p => p.skill != null
+    && computePlayerPositionRank(lastRosterTeams, p.position, p.skill).rank <= 10).length;
+  __faEliteCountCache[team.cityabbr] = count;
+  return count;
+}
+let __faLeagueAvgEliteCache = null;
+function faLeagueAvgEliteCount() {
+  if (__faLeagueAvgEliteCache != null) return __faLeagueAvgEliteCache;
+  const counts = (lastRosterTeams || []).map(faCountEliteOnRoster);
+  __faLeagueAvgEliteCache = counts.length ? counts.reduce((a, b) => a + b, 0) / counts.length : 0;
+  return __faLeagueAvgEliteCache;
+}
+
+// RFA/UFA split per the stated house rule: 26 and younger stay restricted
+// to their own team, 27 and older hit the open market. (If the boundary
+// should sit differently - e.g. 26 itself going either way - this is the
+// one place to change it.)
+function isUnrestrictedFreeAgent(player) {
+  return player.age != null && player.age >= 27;
+}
+
+// v1 asking-price heuristic. Real inputs (salary, skill, soft traits),
+// invented weights - see the file-level comment above this section.
+function estimateFreeAgentAsk(player, rosterTeams) {
+  const greed = player.pers_greed ?? 50;
+  const loyalty = player.pers_loyalty ?? 50;
+  const workEthic = player.pers_work_ethic ?? 50;
+  const posRank = computePlayerPositionRank(rosterTeams, player.position, player.skill || 0);
+  const isTopTier = posRank.rank <= 10;
+
+  const greedFactor = 0.7 + (greed / 100) * 0.8; // 0.7x - 1.5x
+  const topTierBump = isTopTier ? 1 + (greed / 100) * 0.5 : 1.0; // elite + greedy players ask WAY more
+  const teamFriendly = loyalty >= 65 && greed <= 40 && workEthic >= 65;
+  const teamFriendlyDiscount = teamFriendly ? 0.85 : 1.0;
+
+  const baseSalary = Number(player.salary) || 1;
+  const askSalary = baseSalary * greedFactor * topTierBump * teamFriendlyDiscount;
+  const askYears = Math.max(1, Math.min(5, 1 + Math.round((loyalty / 100) * 4)));
+
+  return { askSalary, askYears, isTopTier, posRank, teamFriendly };
+}
+
+// v1 "openness to leaving" heuristic - shown as the arrow column on the FA
+// board even before any offer is made. Represents willingness to engage
+// with an offer from a specific team, not a guaranteed outcome. Same
+// caveat as estimateFreeAgentAsk: real trait inputs, invented weights.
+function computeInterestScore(player, currentTeam, targetTeam) {
+  const greed = (player.pers_greed ?? 50) / 100;
+  const loyalty = (player.pers_loyalty ?? 50) / 100;
+  const winner = (player.pers_winner ?? 50) / 100;
+
+  // A high-Winner player reads a roster's Elite (top-10-at-position)
+  // headcount as "is this team built to win now" - above the league
+  // average pulls them in (or keeps them, in the re-sign case), below
+  // average pushes them away. Scaled by how much winning matters to this
+  // specific player, so a low-Winner player barely notices either way.
+  const eliteDelta = faCountEliteOnRoster(targetTeam) - faLeagueAvgEliteCount();
+  const winnerAdj = winner * (eliteDelta / 10) * 0.3;
+
+  // Re-signing with your OWN team is a different question than "would you
+  // leave for a different one." Loyalty should make staying EASIER here,
+  // not harder - the general formula below has loyalty pulling openness
+  // DOWN, which is correct for "willingness to leave" but backwards for
+  // "willingness to stay." Same for the elite lock further down: it
+  // represents resistance to being poached, not resistance to accepting
+  // your own team's offer.
+  if (currentTeam.cityabbr === targetTeam.cityabbr) {
+    let openness = 0.5 + loyalty * 0.35 - greed * 0.15 + winnerAdj;
+    return Math.max(0, Math.min(1, openness));
+  }
+
+  const winPct = (t) => {
+    const s = getLatestTeamStats(t);
+    if (!s || s.stat_wins == null || s.stat_losses == null) return 0.5;
+    const w = Number(s.stat_wins) || 0, l = Number(s.stat_losses) || 0;
+    return (w + l) > 0 ? w / (w + l) : 0.5;
+  };
+  const situationDelta = winPct(targetTeam) - winPct(currentTeam); // positive = target team is the better situation
+
+  let openness = 0.5
+    + greed * 0.3          // greedy players are generically more open to a better-money situation
+    - loyalty * 0.25        // loyal players resist leaving regardless of situation
+    + situationDelta * 0.4 * (1 - loyalty * 0.5) // a clearly better situation helps, tempered for loyal players
+    + winnerAdj;
+  openness = Math.max(0, Math.min(1, openness));
+
+  // Elite lock: a top-tier player who's loyal and not greedy is basically
+  // staying put barring an exceptional offer - this is the "won't leave
+  // unless greed pushes them" behavior specifically called for.
+  const posRank = computePlayerPositionRank(lastRosterTeams, player.position, player.skill || 0);
+  const isElite = posRank.rank <= 10;
+  if (isElite && loyalty >= 0.6 && greed <= 0.4) openness = Math.min(openness, 0.3);
+
+  return openness;
+}
+
+function interestArrow(score) {
+  if (score >= 0.75) return { symbol: '\u2B06', color: '#39FF6A', label: 'High Interest' };
+  if (score >= 0.6) return { symbol: '\u2197', color: '#FFE066', label: 'Leaning Interested' };
+  if (score >= 0.4) return { symbol: '\u2192', color: '#FF9F40', label: 'Neutral' };
+  if (score >= 0.25) return { symbol: '\u2198', color: '#FF4D4D', label: 'Leaning No' };
+  return { symbol: '\u2B07', color: '#FF3EC9', label: 'Very Unlikely' };
+}
+
+// Live reaction to a SPECIFIC dollar/years offer, for the offer modal.
+// Combines baseline openness (does this player even want to talk to you)
+// with how well the actual numbers match what they'd ask for.
+function computeOfferReaction(player, currentTeam, targetTeam, offerSalary, offerYears) {
+  const ask = estimateFreeAgentAsk(player, lastRosterTeams);
+  const greed = (player.pers_greed ?? 50) / 100;
+  const loyalty = (player.pers_loyalty ?? 50) / 100;
+
+  const salaryScore = Math.max(0, Math.min(1.3, offerSalary / (ask.askSalary || 1)));
+  const yearsScore = Math.max(0, Math.min(1.3, offerYears / (ask.askYears || 1)));
+  const totalWeight = greed + loyalty || 1;
+  const wSalary = greed / totalWeight;
+  const wYears = loyalty / totalWeight;
+  let offerSatisfaction = salaryScore * wSalary + yearsScore * wYears;
+  // Floor: a genuinely lowball salary offer should hurt regardless of how
+  // little weight this player's trait mix puts on money - nobody signs
+  // for free just because they value contract length. Without this, a
+  // high-loyalty player's years-match could mask a near-$0 salary offer.
+  if (salaryScore < 0.5) offerSatisfaction *= (0.5 + salaryScore);
+
+  const openness = computeInterestScore(player, currentTeam, targetTeam);
+  let finalScore = openness * 0.4 + Math.min(1, offerSatisfaction) * 0.6;
+
+  // Morale and extreme greed are applied as direct gates on the whole
+  // score, not folded into openness - a strong loyalty/years match could
+  // otherwise fully mask either one (verified in testing: a very-low-
+  // morale but high-loyalty player was still signing ~70% of the time
+  // off a below-market offer before this). This is specifically what
+  // makes "very low morale" or "very greedy" reliably block a cheap
+  // minimum offer, independent of how favorable the rest of their trait
+  // profile is.
+  if (player.morale != null) {
+    if (player.morale < 20) finalScore *= 0.45;
+    else if (player.morale < 35) finalScore *= 0.65;
+    else if (player.morale < 50) finalScore *= 0.85;
+  }
+  if (greed > 0.85) finalScore *= 0.5;
+  else if (greed > 0.70) finalScore *= 0.75;
+
+  finalScore = Math.max(0, Math.min(1, finalScore));
+
+  return { score: finalScore, ask, offerSatisfaction, openness, ...interestArrow(finalScore) };
+}
+
+// Previously, acceptance was a hard "score >= 0.55 always signs" cutoff -
+// fully deterministic. Since the sliders default to prefilling exactly a
+// player's computed ask, that meant matching the ask was a GUARANTEED
+// sign every time, which is why nothing ever turned the user down. Real
+// negotiations have some give even at a fair price - a player might just
+// not be feeling it that day, or (unmodeled here) have quiet interest
+// elsewhere. This converts the hard cutoff into a probability: bad offers
+// (score <= 0.35) never land, great ones (score >= 0.85) are effectively
+// guaranteed, and everything between is genuinely uncertain rather than a
+// sure thing the instant you clear 0.55.
+function faRollAcceptance(score) {
+  const probability = Math.max(0, Math.min(1, (score - 0.35) / 0.5));
+  return Math.random() < probability;
+}
+
+// =====================================================================
+// FREE AGENCY: ROUND-BASED SIMULATION (v1)
+//
+// A house-rule simulation, entirely local to this tool. 5 rounds. Each
+// round: the user can submit offers, then every OTHER team in the league
+// runs a simplified AI pass, then results resolve and unsigned players
+// carry into the next round. After round 1, elite players nobody made an
+// offer to lock in with their original team unless greedy (per the
+// explicit design: elite talent doesn't hit the market broadly unless
+// approached early or pulled out by their own greed).
+//
+// This never touches your actual save file - it's a what-if planner.
+// =====================================================================
+
+// "Minimum offer" - a one-click re-sign for players who aren't worth
+// fussing over sliders for. Offers 65% of their computed ask at their
+// preferred years. This reliably works on an easygoing vet (low greed,
+// decent morale, some loyalty - years-match carries them even at a real
+// discount), and reliably FAILS on a greedy or genuinely unhappy player,
+// since both greed (via the salary weighting) and low morale (via the
+// dedicated morale factor in computeOfferReaction) push the score down
+// independently. That's the point - it's meant to expose exactly which
+// players are "easy" and which aren't, not to guarantee a sign.
+function faMinimumOfferTerms(player, rosterTeams) {
+  const ask = estimateFreeAgentAsk(player, rosterTeams);
+  return { salary: Math.max(0.1, ask.askSalary * 0.65), years: ask.askYears };
+}
+
+function faQueueMinimumOffer(entry, myTeam, state) {
+  const terms = faMinimumOfferTerms(entry.player, lastRosterTeams);
+  const pid = String(entry.player.pid);
+  const isPoach = entry.team.cityabbr !== myTeam.cityabbr;
+  const cap = computeSigningCap(myTeam, lastRosterTeams, state);
+  if (cap && cap.cap != null) {
+    const projected = faComputeSpentSoFar(state, myTeam.cityabbr) + faComputePendingQueuedTotal(state, pid) + terms.salary;
+    if (projected > cap.cap) return false; // over the dollar cap - caller should show the full modal so the user can see why and adjust
+  }
+  if (isPoach && cap && cap.maxNewOffers != null) {
+    const alreadyCounted = state.newOfferAttempts.has(pid);
+    const used = faCountNewOfferUsage(state, myTeam.cityabbr, true) - (alreadyCounted ? 1 : 0);
+    if (used >= cap.maxNewOffers) return false; // out of new-team offer slots
+  }
+  state.userOffers[pid] = terms;
+  state.cutPids.delete(pid); // queuing any offer cancels a pending cut on the same player
+  return true;
+}
+
+// Toggle "we're moving on" for one of the user's own pending free agents.
+// Mutually exclusive with a queued offer on the same player - cutting
+// clears any offer, and (in the modal/quick-offer paths) making an offer
+// clears a cut flag.
+function faToggleCut(pid, state) {
+  if (state.cutPids.has(pid)) {
+    state.cutPids.delete(pid);
+  } else {
+    state.cutPids.add(pid);
+    delete state.userOffers[pid];
+  }
+}
+
+let faSimState = null; // null = simulation not started
+
+function faInitSimulation(myTeamCity) {
+  const myTeam = lastRosterTeams.find(t => t.cityabbr === myTeamCity);
+  const pool = [];
+  (lastRosterTeams || []).forEach(t => {
+    (t.player || []).filter(isUnrestrictedFreeAgent).forEach(p => {
+      if (p.skill == null || p.pid == null) return;
+      pool.push({ pid: String(p.pid), player: p, originalTeam: t });
+    });
+  });
+
+  // Roster balancing: every team starts with the exact same count per
+  // position league-wide (verified against the real save). A signing that
+  // moves a player between teams would break that unless something comes
+  // back the other way, so every real departure triggers an immediate
+  // 1-for-1 swap: the signing team gives up their worst player at that
+  // exact position to the team that just lost someone.
+  //
+  // This is tracked as a live-mutated Map of each team's CURRENT roster
+  // (not a separately-reconstructed additions/removals log) specifically
+  // because a player can leave a team and later rejoin the SAME team as a
+  // give-back in a later round - a simple "ever removed" flag can't tell
+  // that case apart from "gone for good," which was a real bug caught in
+  // testing (a player vanished from the entire league when this was
+  // tracked as separate add/remove lists instead of live state).
+  const currentRosters = {};
+  (lastRosterTeams || []).forEach(t => {
+    const map = new Map();
+    (t.player || []).forEach(p => { if (p.pid != null) map.set(String(p.pid), p); });
+    currentRosters[t.cityabbr] = map;
+  });
+
+  faSimState = {
+    myTeamCity,
+    round: 1,
+    maxRounds: 5,
+    pool,
+    signings: [],       // {pid, player, fromTeam, toTeam, salary, years, round, wasUser, giveBack, isCutReplacement}
+    userOffers: {},      // pid -> {salary, years}
+    cutPids: new Set(),   // pids the user has marked "we're moving on" - own pending UFAs only
+    offeredThisRound: new Set(), // pids that received ANY offer (user or AI) this round - drives the elite lock-out check after round 1
+    eliteLockedIn: [],   // players who locked in with original team after round 1 due to no interest
+    log: [],             // round-by-round recap text
+    currentRosters,       // cityabbr -> Map(pid -> player) - live, authoritative
+    everJoined: {},        // cityabbr -> Set of pid who joined at ANY point (for the UI's "new" marker only - not authoritative)
+    signedPids: new Set(),  // ALL pids that successfully signed a contract this cycle, including same-team re-signs (which never touch everJoined since no roster swap happens for those)
+    competingOffers: {},     // pid -> {aiTeam, salary, years, flaggedRound} - an AI team wants one of YOUR pending free agents. Gives one full round of warning before it finalizes, so you get a real chance to counter.
+    newOfferAttempts: new Set(),  // pids the USER has made a new-team (poaching) offer on, ever - re-signing your own doesn't count. Counted against your live maxNewOffers limit.
+    aiNewOfferCounts: {},      // cityabbr -> count of new-team offers that AI team has made this cycle - same limit applies to them for consistency.
+  };
+  return faSimState;
+}
+
+function faEffectiveRoster(team, state) {
+  return Array.from(state.currentRosters[team.cityabbr].values());
+}
+
+function faEffectiveRosterAtPosition(team, position, state) {
+  return faEffectiveRoster(team, state).filter(p => p.position === position);
+}
+
+// Runs the actual roster movement for one real departure (fromTeam !==
+// toTeam): the player joins toTeam, and toTeam's worst player at that
+// exact position (excluding the player who just arrived) goes back to
+// fromTeam. Returns the give-back player, or null if none was available
+// (shouldn't happen given every position starts with >=1 player, but
+// guarded just in case a position gets fully drained by prior swaps).
+function faExecuteSwap(player, fromTeam, toTeam, state) {
+  const move = (pid, fromCity, toCity, playerObj) => {
+    state.currentRosters[fromCity].delete(String(pid));
+    state.currentRosters[toCity].set(String(pid), playerObj);
+    if (!state.everJoined[toCity]) state.everJoined[toCity] = new Set();
+    state.everJoined[toCity].add(String(pid));
+  };
+
+  move(player.pid, fromTeam.cityabbr, toTeam.cityabbr, player);
+
+  const toTeamAtPosition = faEffectiveRosterAtPosition(toTeam, player.position, state)
+    .filter(p => String(p.pid) !== String(player.pid));
+  if (!toTeamAtPosition.length) return null; // guard - shouldn't happen given every position starts with >=1 player
+  // Give-back comes from the bottom tier at that position (worse than
+  // most of the roster there - a real downgrade, matching the original
+  // design's explicit "not good... generally a benchwarmer" framing) but
+  // NOT deterministically the single worst every time. That distinction
+  // matters at volume: when many players leave at once, always importing
+  // the literal rock-bottom player at each position compounds into an
+  // unrealistically severe salary crater (confirmed happening - a team
+  // that lost most of its pending free agents saw payroll drop ~$50M).
+  // Picking randomly from the bottom third keeps the "this is a real
+  // cost" consequence without making every swap a worst-case one.
+  const sorted = [...toTeamAtPosition].sort((a, b) => (a.skill || 0) - (b.skill || 0));
+  const bottomTierSize = Math.max(1, Math.ceil(sorted.length / 3));
+  const giveBack = sorted[Math.floor(Math.random() * bottomTierSize)];
+
+  move(giveBack.pid, toTeam.cityabbr, fromTeam.cityabbr, giveBack);
+
+  // The give-back player might themselves still be an active UFA in the
+  // pool (common in round 1, when a team's whole depth at a position can
+  // be on the open market at once - there may be no other candidate to
+  // choose from). Their pool entry's "current team" needs to move with
+  // them, or their own eventual signing would resolve against a team they
+  // no longer play for.
+  const poolEntry = state.pool.find(e => e.pid === String(giveBack.pid));
+  if (poolEntry) poolEntry.originalTeam = fromTeam;
+
+  return giveBack;
+}
+
+// Very simplified AI: each non-user team looks at its own flagged Draft
+// Needs (reusing the same tier system from Draft Prep), picks its single
+// highest-tier, highest-severity need, and tries to sign the best
+// available UFA at that position it can afford under its own signing cap.
+// Offers near-ask if the need is critical, lighter if just moderate/minor.
+// Live count of new-team (poaching) offers a team has used - historical
+// (committed in a prior round) plus, for the user specifically, anything
+// currently queued this round but not yet resolved. AI teams only need
+// the historical count since their offers resolve same-round.
+function faCountNewOfferUsage(state, cityabbr, isUser) {
+  if (isUser) {
+    const historical = state.newOfferAttempts.size;
+    const queued = Object.keys(state.userOffers).filter(pid => {
+      const entry = state.pool.find(e => e.pid === pid);
+      return entry && entry.originalTeam.cityabbr !== cityabbr;
+    }).length;
+    return historical + queued;
+  }
+  return state.aiNewOfferCounts[cityabbr] || 0;
+}
+
+function faRunAiRound(state, roundLog) {
+  // Finalize any competing offer flagged in a PRIOR round that the user
+  // didn't beat. This runs before AI teams look for new targets, since a
+  // finalized departure changes what's available. No new random roll here
+  // - the threat was already proven real when it was first flagged; this
+  // just executes it, using the same team and terms from back then.
+  Object.keys(state.competingOffers).forEach(pid => {
+    const threat = state.competingOffers[pid];
+    const entry = state.pool.find(e => e.pid === pid);
+    if (!entry) { delete state.competingOffers[pid]; return; } // already resolved (e.g. user re-signed them) - nothing to finalize
+    const aiTeam = threat.aiTeam;
+    let giveBack = null;
+    if (aiTeam.cityabbr !== entry.originalTeam.cityabbr) {
+      giveBack = faExecuteSwap(entry.player, entry.originalTeam, aiTeam, state);
+    }
+    state.signings.push({
+      pid, player: entry.player, fromTeam: entry.originalTeam, toTeam: aiTeam,
+      salary: threat.salary, years: threat.years, round: state.round, wasUser: false, giveBack, wasCompetingOffer: true,
+    });
+    state.signedPids.add(pid);
+    state.pool = state.pool.filter(e => e.pid !== pid);
+    delete state.competingOffers[pid];
+    if (roundLog) roundLog.threatsLost = roundLog.threatsLost || [];
+    if (roundLog) roundLog.threatsLost.push({ player: entry.player, toTeam: aiTeam, giveBack });
+  });
+
+  const otherTeams = lastRosterTeams.filter(t => t.cityabbr !== state.myTeamCity);
+  // Randomize team order each round so the same team doesn't always win ties.
+  const shuffled = [...otherTeams].sort(() => Math.random() - 0.5);
+
+  shuffled.forEach(aiTeam => {
+    if (!state.pool.length) return;
+    const needs = analyzeDraftNeeds(lastRosterTeams, aiTeam);
+    if (!needs.length) return;
+    const severityOrder = { critical: 0, moderate: 1, minor: 2 };
+    needs.sort((a, b) => (a.tier - b.tier) || (severityOrder[a.severity] - severityOrder[b.severity]));
+    const topNeed = needs[0];
+
+    const candidates = state.pool.filter(e => e.player.position === topNeed.position && !state.competingOffers[e.pid])
+      .sort((a, b) => (b.player.skill || 0) - (a.player.skill || 0));
+    if (!candidates.length) return;
+    const target = candidates[0];
+    const isPoach = aiTeam.cityabbr !== target.originalTeam.cityabbr;
+
+    const cap = computeSigningCap(aiTeam, lastRosterTeams, state);
+    if (isPoach && cap && cap.maxNewOffers != null && faCountNewOfferUsage(state, aiTeam.cityabbr, false) >= cap.maxNewOffers) return; // this AI team is out of poaching offers this cycle - same limit that applies to the user
+    const ask = estimateFreeAgentAsk(target.player, lastRosterTeams);
+    if (cap && cap.cap != null && ask.askSalary > cap.cap) return; // can't afford even their own ask under a hard/soft cap
+
+    // Offer strength scales with how badly they need it.
+    const offerMultiplier = topNeed.severity === 'critical' ? 1.05 : topNeed.severity === 'moderate' ? 0.95 : 0.85;
+    const offerSalary = ask.askSalary * offerMultiplier;
+    const offerYears = ask.askYears;
+
+    state.offeredThisRound.add(target.pid);
+    if (isPoach) state.aiNewOfferCounts[aiTeam.cityabbr] = (state.aiNewOfferCounts[aiTeam.cityabbr] || 0) + 1;
+    const reaction = computeOfferReaction(target.player, target.originalTeam, aiTeam, offerSalary, offerYears);
+    if (!faRollAcceptance(reaction.score)) return;
+
+    // A real AI signing on one of YOUR OWN pending free agents doesn't
+    // finalize instantly - it gets flagged as a competing offer, giving
+    // you a full round to notice and either match/beat it or let them go.
+    // Round 5 is the exception: there's no following round to react in,
+    // so it resolves the old way (immediately).
+    const isMyPlayer = target.originalTeam.cityabbr === state.myTeamCity;
+    if (isMyPlayer && state.round < state.maxRounds) {
+      state.competingOffers[target.pid] = { aiTeam, salary: offerSalary, years: offerYears, flaggedRound: state.round };
+      if (roundLog) { roundLog.newThreats = roundLog.newThreats || []; roundLog.newThreats.push({ player: target.player, aiTeam, salary: offerSalary, years: offerYears }); }
+      return;
+    }
+
+    let giveBack = null;
+    if (aiTeam.cityabbr !== target.originalTeam.cityabbr) {
+      giveBack = faExecuteSwap(target.player, target.originalTeam, aiTeam, state);
+    }
+    state.signings.push({
+      pid: target.pid, player: target.player, fromTeam: target.originalTeam, toTeam: aiTeam,
+      salary: offerSalary, years: offerYears, round: state.round, wasUser: false, giveBack,
+    });
+    state.signedPids.add(target.pid);
+    state.pool = state.pool.filter(e => e.pid !== target.pid);
+  });
+}
+
+// Resolve the user's queued offers for this round, then run the AI pass,
+// then (round 1 only) lock in un-approached elite players, then advance.
+function faAdvanceRound(state) {
+  const myTeam = lastRosterTeams.find(t => t.cityabbr === state.myTeamCity);
+  const roundLog = { round: state.round, userResults: [], aiSigningsCount: 0, eliteLockIns: [] };
+
+  // 1. User's offers.
+  Object.keys(state.userOffers).forEach(pid => {
+    const entry = state.pool.find(e => e.pid === pid);
+    if (!entry) return; // already gone somehow
+    const offer = state.userOffers[pid];
+    state.offeredThisRound.add(pid);
+    const isPoach = entry.originalTeam.cityabbr !== myTeam.cityabbr;
+    if (isPoach) state.newOfferAttempts.add(pid); // counts against the limit whether it lands or not
+    const reaction = computeOfferReaction(entry.player, entry.originalTeam, myTeam, offer.salary, offer.years);
+    if (faRollAcceptance(reaction.score)) {
+      let giveBack = null;
+      if (myTeam.cityabbr !== entry.originalTeam.cityabbr) {
+        giveBack = faExecuteSwap(entry.player, entry.originalTeam, myTeam, state);
+      }
+      state.signings.push({
+        pid, player: entry.player, fromTeam: entry.originalTeam, toTeam: myTeam,
+        salary: offer.salary, years: offer.years, round: state.round, wasUser: true, giveBack,
+      });
+      state.signedPids.add(pid);
+      state.pool = state.pool.filter(e => e.pid !== pid);
+      roundLog.userResults.push({ player: entry.player, accepted: true, reaction, giveBack });
+    } else {
+      roundLog.userResults.push({ player: entry.player, accepted: false, reaction });
+    }
+  });
+  state.userOffers = {};
+
+  // 2. AI teams.
+  const beforeAiCount = state.signings.length;
+  faRunAiRound(state, roundLog);
+  roundLog.aiSigningsCount = state.signings.length - beforeAiCount;
+
+  // 3. Elite lock-out, round 1 only: any top-10-at-position player who got
+  // NO offer at all (user or AI) this round is treated as re-signing with
+  // their original team and leaving the pool - UNLESS greed is high
+  // enough that they'd test the market anyway. Players the user has
+  // explicitly marked "cut" are excluded here even if elite - the whole
+  // point of cutting them is that they DON'T come back automatically.
+  if (state.round === 1) {
+    const stillInPool = [...state.pool];
+    stillInPool.forEach(entry => {
+      if (state.offeredThisRound.has(entry.pid)) return;
+      if (state.cutPids.has(entry.pid)) return;
+      const posRank = computePlayerPositionRank(lastRosterTeams, entry.player.position, entry.player.skill || 0);
+      const isElite = posRank.rank <= 10;
+      if (!isElite) return;
+      const greed = entry.player.pers_greed ?? 50;
+      if (greed < 60) {
+        state.eliteLockedIn.push(entry);
+        roundLog.eliteLockIns.push(entry.player);
+        state.pool = state.pool.filter(e => e.pid !== entry.pid);
+      }
+    });
+  }
+
+  state.offeredThisRound = new Set();
+  state.log.push(roundLog);
+  state.round += 1;
+
+  // Round 5 just finished: ANY of the user's own pending free agents still
+  // sitting unresolved in the pool - whether explicitly cut, or simply
+  // never successfully retained (cap-blocked, or every offer got
+  // declined) - get forced out now. Previously this only covered
+  // explicitly-cut players, which left a real gap: a team that hit its
+  // cap in round 1 and couldn't make any further offers would see those
+  // players just silently remain on the roster forever, since nothing
+  // had ever actually executed a departure for them. That's wrong - if
+  // you couldn't afford to keep someone, they shouldn't still be here.
+  // Uses the same swap machinery as every other departure: they leave
+  // for some other team, and that team's worst player at the position
+  // comes back, keeping the balance guarantee intact.
+  if (state.round > state.maxRounds) {
+    roundLog.cutReplacements = [];
+    roundLog.unresolvedDepartures = [];
+    const myUnresolved = state.pool.filter(e => e.originalTeam.cityabbr === myTeam.cityabbr);
+    myUnresolved.forEach(entry => {
+      const pid = entry.pid;
+      const wasCut = state.cutPids.has(pid);
+      const otherTeams = lastRosterTeams.filter(t => t.cityabbr !== myTeam.cityabbr);
+      const receivingTeam = otherTeams[Math.floor(Math.random() * otherTeams.length)];
+      const giveBack = faExecuteSwap(entry.player, myTeam, receivingTeam, state);
+      state.signings.push({
+        pid, player: entry.player, fromTeam: myTeam, toTeam: receivingTeam,
+        salary: 0, years: 0, round: state.round - 1, wasUser: false, giveBack,
+        isCutReplacement: wasCut, isUnresolvedDeparture: !wasCut,
+      });
+      state.pool = state.pool.filter(e => e.pid !== pid);
+      if (wasCut) {
+        roundLog.cutReplacements.push({ cutPlayer: entry.player, replacement: giveBack });
+      } else {
+        roundLog.unresolvedDepartures.push({ player: entry.player, replacement: giveBack });
+      }
+    });
+  }
+
+  return roundLog;
 }
 
 function moraleToEmoji(morale) {
@@ -2761,6 +3724,41 @@ function getCurrentWeek(rows, year) {
   return maxPlayedWeek != null ? maxPlayedWeek : maxAnyWeek;
 }
 
+// Free Agency only makes sense in the real off-season window: after the
+// most recent season (including every playoff round) has actually been
+// played, and before any games in the NEXT season have been played yet.
+//
+// The game pre-populates a whole season's schedule (real team matchups,
+// not placeholder -1s) as soon as the previous season wraps and the save
+// moves into the off-season - before a single game of the new season has
+// been played. That means "real matchup, score still -1" is ambiguous by
+// itself: it shows up BOTH mid-season (games not simmed yet later in an
+// in-progress year) AND in the true off-season (the whole new year is
+// queued up, nothing played). The distinguishing signal is whether ANY
+// game in the most recent year has actually been played:
+//   - Zero games played this year at all -> the season hasn't started -
+//     this IS the off-season window (confirmed against a real save: year
+//     3, entire schedule real but every score -1, one save after the
+//     previous season's playoffs concluded).
+//   - Some games played, others in that same year still pending -> the
+//     season (or its playoffs) is actively in progress, not off-season.
+function isOffSeason(rows) {
+  if (!rows || !rows.length) return null; // no schedule loaded - unknown, not a hard "no"
+  let maxYear = null;
+  rows.forEach(r => { if (r.year != null && (maxYear == null || r.year > maxYear)) maxYear = r.year; });
+  if (maxYear == null) return null;
+
+  const thisYearRows = rows.filter(r => r.year === maxYear);
+  const anyPlayedThisYear = thisYearRows.some(r => r.awayScore !== -1 && r.homeScore !== -1);
+  if (!anyPlayedThisYear) return true; // nothing played yet this year - the off-season gap before it starts
+
+  const anyPendingRealGameThisYear = thisYearRows.some(r =>
+    r.awayTid != null && r.awayTid !== -1 && r.homeTid != null && r.homeTid !== -1 &&
+    (r.awayScore === -1 || r.homeScore === -1)
+  );
+  return !anyPendingRealGameThisYear;
+}
+
 // A team's most recently known TRUE rank, independent of any one specific
 // game - used for standalone team/matchup lookups (Team Card, Matchup Card)
 // where there's no completed game's score to match against for
@@ -3551,6 +4549,7 @@ function tryBuild() {
   renderPowerRankings();
   renderTradeMachine();
   renderDraftPrepPicker();
+  renderFreeAgency();
 
   const newLoadedGames = [];
   pairs.forEach(pair => {
@@ -3614,6 +4613,7 @@ function tryBuild() {
   renderPowerRankings();
   renderTradeMachine();
   renderDraftPrepPicker();
+  renderFreeAgency();
 }
 
 function renderActiveGame() {
@@ -3679,6 +4679,7 @@ function removeGame(idx) {
     renderPowerRankings();
   renderTradeMachine();
   renderDraftPrepPicker();
+  renderFreeAgency();
     return;
   }
   if (activeGameIndex === idx) activeGameIndex = Math.min(idx, loadedGames.length - 1);
@@ -3693,6 +4694,7 @@ function removeGame(idx) {
   renderPowerRankings();
   renderTradeMachine();
   renderDraftPrepPicker();
+  renderFreeAgency();
 }
 
 document.addEventListener('click', (e) => {
@@ -5264,6 +6266,789 @@ function renderDraftPrepPicker() {
   }
 }
 
+function styleFreeAgencySelect(cityabbr) {
+  const sel = document.getElementById('fa-team-select');
+  if (!sel) return;
+  const brand = singleTeamBranding(cityabbr);
+  sel.style.background = brand.primary;
+  sel.style.color = brand.secondary;
+  sel.style.borderColor = brand.secondary;
+}
+
+function renderFreeAgency() {
+  const container = document.getElementById('view-freeagency');
+  if (!container || !lastRosterTeams) return;
+
+  const tabBtn = document.querySelector('.tab-btn[data-view="freeagency"]');
+  const offSeason = isOffSeason(lastScheduleRows);
+
+  if (offSeason === false) {
+    // A real game (or playoff round) is still pending somewhere in the
+    // schedule - Free Agency only makes sense between seasons, so block
+    // it here rather than let the user build a plan against a roster
+    // that's about to keep playing games.
+    if (tabBtn) { tabBtn.classList.add('tab-disabled'); tabBtn.title = 'Free Agency is only available in the off-season - this save still has games left to play.'; }
+    faSimState = null;
+    container.innerHTML = `
+      <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
+      <div class="predict-disclaimer" style="border-left-color:#FF9F40;">
+        <strong style="color:#FF9F40;">Not available yet.</strong> Free Agency only makes sense between seasons - after every game, including the full playoffs and Super Bowl, has actually been played, and before the next season's schedule is generated. Your loaded schedule.txt still has real games left unplayed. Finish out the season in-game, save between seasons, and reload here.
+      </div>
+    `;
+    return;
+  }
+  if (tabBtn) { tabBtn.classList.remove('tab-disabled'); tabBtn.title = ''; }
+  if (offSeason == null) {
+    container.innerHTML = `
+      <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
+      <div class="predict-disclaimer">Load a schedule.txt export alongside your roster so this tool can confirm you're between seasons before enabling Free Agency.</div>
+    `;
+    return;
+  }
+
+  const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('');
+  container.innerHTML = `
+    <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
+    <div class="predict-disclaimer">This is a house-rule simulation layered on top of your save - it does NOT read or write any real Legend Bowl mechanic, and nothing here changes your actual save file. The signing cap is computed from your league's real payroll numbers; the asking-price and interest estimates use real soft-trait fields (greed, loyalty, work ethic) but the dollar weights and AI team logic are a first-draft heuristic, not something the save file can confirm. Treat it as a planning tool, not gospel - press "Start Simulation" below to run a full 5-round cycle with AI-controlled other teams.</div>
+    <div class="card-picker" style="margin-top:14px;">
+      <select id="fa-team-select">${options}</select>
+      <button class="load-btn ready" id="fa-team-build-btn">SHOW MY CAP</button>
+    </div>
+    <div id="fa-result"></div>
+  `;
+  const selectEl = document.getElementById('fa-team-select');
+  selectEl.addEventListener('change', () => styleFreeAgencySelect(selectEl.value));
+  document.getElementById('fa-team-build-btn').addEventListener('click', () => {
+    styleFreeAgencySelect(selectEl.value);
+    renderFreeAgencyResult(selectEl.value);
+  });
+  if (teamsSorted.length) {
+    styleFreeAgencySelect(teamsSorted[0].cityabbr);
+    renderFreeAgencyResult(teamsSorted[0].cityabbr);
+  }
+}
+
+// Broad position groups for the salary summary box, matching how a coach
+// actually thinks about roster spending (not the same as the Draft Prep
+// tier groupings, which are about positional IMPORTANCE, not payroll).
+const FA_SALARY_GROUPS = {
+  QB: ['QB'], RB: ['HB', 'FB'], TE: ['TE'], WR: ['WR'],
+  OL: ['LT', 'LG', 'C', 'RG', 'RT'], DL: ['LDE', 'LDT', 'RDT', 'RDE'],
+  LB: ['ILB', 'OLB'], DB: ['CB', 'FS', 'SS'], ST: ['K', 'P'],
+};
+
+// state is optional - pass the active faSimState to reflect the live
+// mid-simulation roster, or omit for the original pre-FA save data.
+function faTeamRoster(team, state) {
+  return state ? faEffectiveRoster(team, state) : (team.player || []).filter(p => p.pid != null);
+}
+
+function faGroupSpend(team, positions, state) {
+  return faTeamRoster(team, state).filter(p => positions.includes(p.position)).reduce((s, p) => s + (Number(p.salary) || 0), 0);
+}
+
+function faTeamTotalPayroll(team, state) {
+  return faTeamRoster(team, state).reduce((s, p) => s + (Number(p.salary) || 0), 0);
+}
+
+// rank 1 = highest spender in the league at this group/overall - "the
+// more you pay a position group, the higher (numerically lower) your rank."
+function faSpendRank(myTeam, positions, state) {
+  const entries = lastRosterTeams.map(t => ({ tid: Math.round(t.tid), spend: positions ? faGroupSpend(t, positions, state) : faTeamTotalPayroll(t, state) }));
+  entries.sort((a, b) => b.spend - a.spend);
+  const idx = entries.findIndex(e => e.tid === Math.round(myTeam.tid));
+  return idx === -1 ? null : { rank: idx + 1, total: entries.length, spend: entries[idx].spend };
+}
+
+function buildFaSalarySummaryHtml(team, state) {
+  const totalRank = faSpendRank(team, null, state);
+  const groupBadges = Object.entries(FA_SALARY_GROUPS).map(([label, positions]) => {
+    const r = faSpendRank(team, positions, state);
+    if (!r) return '';
+    const color = getHeatColorForRank(r.rank, r.total);
+    return `<div class="fa-salary-group-badge">
+      <div class="fa-salary-group-label">${esc(label)}</div>
+      <div class="fa-salary-group-rank" style="color:${color};">#${esc(r.rank)}</div>
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="fa-salary-summary">
+      <div class="fa-salary-summary-top">
+        <div class="fa-salary-summary-total">$${esc(totalRank.spend.toFixed(2))}M</div>
+        <div class="fa-salary-summary-rank">League Salary Rank <strong>#${esc(totalRank.rank)}</strong> of ${esc(totalRank.total)}</div>
+      </div>
+      <div class="fa-salary-group-row">${groupBadges}</div>
+      <div class="empty-note" style="text-align:left; margin-top:6px;">Rank badge under each group is where you rank league-wide on spending at that position group - #1 spends the most. Colors match the same green→magenta scale used everywhere else in this tool.${state ? ' Updates live as signings happen during the simulation.' : ''}</div>
+    </div>
+  `;
+}
+
+function faComputeSpentSoFar(state, cityabbr) {
+  return state.signings
+    .filter(s => s.toTeam.cityabbr === cityabbr)
+    .reduce((sum, s) => sum + s.salary, 0);
+}
+
+function faComputePendingQueuedTotal(state, excludePid) {
+  return Object.entries(state.userOffers)
+    .filter(([pid]) => pid !== excludePid)
+    .reduce((sum, [, offer]) => sum + offer.salary, 0);
+}
+
+function renderFreeAgencyResult(cityabbr) {
+  const resultEl = document.getElementById('fa-result');
+  if (!resultEl || !lastRosterTeams) return;
+  const team = lastRosterTeams.find(t => t.cityabbr === cityabbr);
+  if (!team) { resultEl.innerHTML = ''; return; }
+
+  const simActive = faSimState && faSimState.myTeamCity === cityabbr;
+
+  // Both the dollar cap AND the new-offer-count limit are now evaluated
+  // LIVE against every team's current payroll standing (via state), not
+  // a one-time snapshot from when the simulation started. That's a
+  // deliberate fix, not the original design: locking the cap to the
+  // starting rank meant a team starting outside the capped bracket had
+  // zero restriction for the entire simulation regardless of how much it
+  // spent or how high it climbed - confirmed happening in testing (a
+  // team starting at rank #11, below the cap threshold, finished at #5
+  // with no resistance at all). Recomputing live closes that gap.
+  const signingCap = computeSigningCap(team, lastRosterTeams, simActive ? faSimState : null);
+  let capHtml = '';
+  if (signingCap) {
+    const tierColor = signingCap.tier === 'hard' ? '#FF4D4D' : signingCap.tier === 'soft' ? '#FF9F40' : '#39FF6A';
+    const tierLabel = signingCap.tier === 'hard' ? 'HARD CAP - Top 10% Payroll' : signingCap.tier === 'soft' ? 'SOFT CAP - Top 25% Payroll' : 'NO CAP';
+
+    const spentSoFar = simActive ? faComputeSpentSoFar(faSimState, team.cityabbr) : 0;
+    const pendingTotal = simActive ? faComputePendingQueuedTotal(faSimState, null) : 0;
+    const newOffersUsed = simActive ? faCountNewOfferUsage(faSimState, team.cityabbr, true) : 0;
+
+    capHtml = `
+      <div class="dp-identity-card">
+        <div class="dp-identity-label" style="color:${tierColor};">${esc(tierLabel)}</div>
+        <div class="dp-identity-detail">${simActive ? 'Live' : 'Current'} payroll: <strong>$${esc(signingCap.ownPayroll.toFixed(1))}M</strong> - rank #${esc(signingCap.rank)} of ${esc(signingCap.total)} in the league${simActive ? ' (updates live)' : ''}</div>
+        <div class="dp-identity-detail">League average payroll: <strong>$${esc(signingCap.leagueAvgPayroll.toFixed(1))}M</strong></div>
+        ${signingCap.cap != null
+          ? `<div class="dp-identity-detail">New UFA signing budget this cycle: <strong style="color:${tierColor};">$${esc(signingCap.cap.toFixed(1))}M total</strong></div>`
+          : `<div class="dp-identity-detail">No dollar signing restriction right now - payroll isn't in the top 25% of the league.</div>`}
+        <div class="dp-identity-detail">New-team (poaching) offers allowed: <strong style="color:${tierColor};">${signingCap.maxNewOffers != null ? esc(signingCap.maxNewOffers) : 'Unlimited'}</strong>${simActive && signingCap.maxNewOffers != null ? ` - ${esc(newOffersUsed)} used` : ''}</div>
+        ${simActive ? `
+        <div class="dp-identity-detail" style="margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,0.08);">Spent on new signings so far: <strong>$${esc(spentSoFar.toFixed(1))}M</strong>${pendingTotal > 0 ? ` + $${esc(pendingTotal.toFixed(1))}M queued this round` : ''}</div>
+        ${signingCap.cap != null ? `<div class="dp-identity-detail">Remaining budget: <strong style="color:${(spentSoFar + pendingTotal) > signingCap.cap ? '#FF4D4D' : tierColor};">$${esc(Math.max(0, signingCap.cap - spentSoFar - pendingTotal).toFixed(1))}M</strong></div>` : ''}
+        ` : ''}
+        <div class="dp-identity-strategy">Re-signing your own pending free agents never counts against either limit - only offers on someone else's player do. You can still address needs through the Draft regardless of this cap.</div>
+      </div>
+    `;
+  }
+
+  if (!simActive) {
+    renderFaBrowseMode(resultEl, team, capHtml);
+  } else {
+    renderFaSimMode(resultEl, team, capHtml);
+  }
+}
+
+// Pure browsing - the whole league-wide UFA board, no round structure,
+// just exploration + the live what-if offer modal (preview only, doesn't
+// queue anything until a simulation is actually started).
+function renderFaBrowseMode(resultEl, team, capHtml) {
+  const ufas = [];
+  (lastRosterTeams || []).forEach(t => {
+    (t.player || []).filter(isUnrestrictedFreeAgent).forEach(p => {
+      if (p.skill == null) return;
+      const ask = estimateFreeAgentAsk(p, lastRosterTeams);
+      const interest = computeInterestScore(p, t, team);
+      ufas.push({ player: p, team: t, ask, interest });
+    });
+  });
+  const sorted = faSortEntries(ufas);
+  const boardHtml = buildFaTwoColumnBoardHtml(sorted, team, null);
+  window.__faTargetTeam = team;
+
+  resultEl.innerHTML = `
+    ${buildFaSalarySummaryHtml(team, null)}
+    ${boardHtml}
+    ${capHtml}
+    <div class="fa-start-sim-box">
+      <button class="load-btn ready" id="fa-start-sim-btn">START 5-ROUND FREE AGENCY SIMULATION</button>
+      <p class="empty-note" style="text-align:left; margin: 8px 0 0;">Runs a full round-based cycle: you submit offers each round, every other team in the league runs a simplified AI pass, and the pool shrinks as players sign. Nothing here touches your save file - it's a planner.</p>
+    </div>
+  `;
+
+  document.getElementById('fa-start-sim-btn').addEventListener('click', () => {
+    faInitSimulation(team.cityabbr);
+    renderFreeAgencyResult(team.cityabbr);
+  });
+  wireFaBoardClicks(resultEl, team, null);
+}
+
+// Active round-based simulation - pool-filtered board, pending-offers
+// queue, and round advancement.
+function faStandardPositionCount(position) {
+  // All 32 teams start with identical counts per position (verified
+  // against the real save), so any untouched team's original roster is a
+  // valid reference point for what "balanced" looks like.
+  const ref = lastRosterTeams[0];
+  return (ref.player || []).filter(p => p.position === position && p.skill != null).length;
+}
+
+function renderFaRosterView(cityabbr) {
+  const resultEl = document.getElementById('fa-result');
+  const state = faSimState;
+  if (!resultEl || !state) return;
+  const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+  const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}" ${t.cityabbr === cityabbr ? 'selected' : ''}>${esc(t.city)} ${esc(t.name)}</option>`).join('');
+  const team = lastRosterTeams.find(t => t.cityabbr === cityabbr) || lastRosterTeams.find(t => t.cityabbr === state.myTeamCity);
+
+  const additions = state.everJoined[team.cityabbr] || new Set();
+  const roster = faEffectiveRoster(team, state);
+  // Anyone still in the pool is an unresolved pending UFA - still counted
+  // on the roster (nothing has removed them yet), but their contract
+  // status isn't settled. Distinct from "additions" (everJoined), which
+  // is who has actually moved as part of an FA transaction.
+  const stillUfaPids = new Set(state.pool.filter(e => e.originalTeam.cityabbr === team.cityabbr).map(e => e.pid));
+
+  // Same league-wide SPD percentile heatmap used in Draft Prep - speed
+  // doesn't change during FA, so this can be computed straight from the
+  // original save data regardless of simulation state.
+  const leagueSpeeds = (lastRosterTeams || [])
+    .flatMap(t => (t.player || []))
+    .map(p => Math.round(p.speed || 0))
+    .filter(s => s > 0);
+
+  function positionBlock(pos) {
+    const players = roster.filter(p => p.position === pos).sort((a, b) => (b.skill || 0) - (a.skill || 0));
+    const standard = faStandardPositionCount(pos);
+    const balanced = players.length === standard;
+    const rows = players.map(p => {
+      const pidStr = String(p.pid);
+      const isStillUfa = stillUfaPids.has(pidStr);
+      // everJoined only ever gets populated by faExecuteSwap's move() - a
+      // genuine re-sign of your own player never triggers a swap (nothing
+      // needs to move), so anyone in everJoined is, by construction, a
+      // real new arrival: either a UFA you poached, or a give-back player
+      // you received as compensation for someone else leaving.
+      const isNewArrival = !isStillUfa && additions.has(pidStr);
+      const isReSigned = !isStillUfa && !isNewArrival && state.signedPids.has(pidStr);
+      const rowStyle = isStillUfa ? 'background: rgba(255,201,60,0.14);' : isNewArrival ? 'background: rgba(34,211,238,0.16);' : (isReSigned ? 'background: rgba(57,255,106,0.14);' : '');
+      const prefix = isStillUfa ? '\u23F3 ' : isNewArrival ? '\u2192 ' : (isReSigned ? '\u2705 ' : '');
+      const rowTitle = isStillUfa ? 'Still an unresolved free agent - hasn\'t been re-signed yet' : isNewArrival ? 'New arrival from elsewhere in the league this cycle' : (isReSigned ? 'Re-signed with your team this cycle' : '');
+      return `<div class="dp-row" style="${rowStyle}" title="${rowTitle}">
+        <span class="dp-pos">${esc(pos)}</span>
+        <span class="dp-name">${prefix}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
+        <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+        <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+        <span class="dp-stat" style="color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
+        <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
+        <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
+        <span class="dp-age">${esc(p.age != null ? Math.round(p.age) : '-')}</span>
+        <span class="dp-sal">$${esc((Number(p.salary) || 0).toFixed(1))}M</span>
+      </div>`;
+    }).join('');
+    return `<div class="dp-group">
+      <div class="fa-roster-pos-label" style="color:${balanced ? '#39FF6A' : '#FF4D4D'};">${esc(pos)} - ${esc(players.length)}/${esc(standard)}${balanced ? '' : ' \u26A0 UNBALANCED'}</div>
+      ${rows}
+    </div>`;
+  }
+
+  const header = `<div class="dp-row dp-header">
+    <span class="dp-pos">Pos</span><span class="dp-name">Name</span>
+    <span class="dp-stat">OVR</span><span class="dp-stat">SKL</span><span class="dp-stat">SPD</span><span class="dp-stat">AGL</span><span class="dp-stat">STR</span>
+    <span class="dp-age">Age</span><span class="dp-sal">Sal</span>
+  </div>`;
+
+  const allBalanced = DP_ALL_POSITIONS.every(pos => roster.filter(p => p.position === pos).length === faStandardPositionCount(pos));
+
+  resultEl.innerHTML = `
+    <h2 class="section-title">Post-Free-Agency Roster</h2>
+    <div class="card-picker" style="margin-top:14px;">
+      <select id="fa-roster-team-select">${options}</select>
+      <button class="load-btn ready" id="fa-roster-show-btn">SHOW</button>
+    </div>
+    ${buildFaSalarySummaryHtml(team, state)}
+    <div class="dp-identity-card" style="margin-top:14px; border-left-color: ${allBalanced ? '#39FF6A' : '#FF4D4D'};">
+      <div class="dp-identity-label" style="color:${allBalanced ? '#39FF6A' : '#FF4D4D'};">${allBalanced ? 'ROSTER BALANCED' : 'ROSTER UNBALANCED'}</div>
+      <div class="dp-identity-detail">${state.round > state.maxRounds ? 'Free Agency complete.' : `Free Agency still in progress - Round ${esc(Math.min(state.round, state.maxRounds))} of ${esc(state.maxRounds)}.`} \u2705 green = re-signed with you. \u2192 cyan = new arrival from elsewhere in the league. \u23F3 amber = still an unresolved free agent.</div>
+    </div>
+    <div class="dp-columns" style="margin-top:16px;">
+      <div class="dp-column">
+        <div class="dp-column-title">OFFENSE</div>
+        ${header}
+        ${DRAFT_PREP_OFFENSE_POSITIONS.map(positionBlock).join('')}
+      </div>
+      <div class="dp-column">
+        <div class="dp-column-title">DEFENSE / SPECIAL TEAMS</div>
+        ${header}
+        ${DRAFT_PREP_DEFENSE_POSITIONS.map(positionBlock).join('')}
+      </div>
+    </div>
+    <button class="load-btn" id="fa-roster-back-btn" style="margin-top:16px;">\u2190 Back to Recap</button>
+  `;
+
+  document.getElementById('fa-roster-show-btn').addEventListener('click', () => {
+    renderFaRosterView(document.getElementById('fa-roster-team-select').value);
+  });
+  document.getElementById('fa-roster-back-btn').addEventListener('click', () => {
+    renderFreeAgencyResult(state.myTeamCity);
+  });
+}
+
+function renderFaSimMode(resultEl, team, capHtml) {
+  const state = faSimState;
+
+  if (state.round > state.maxRounds) {
+    resultEl.innerHTML = `${buildFaSalarySummaryHtml(team, state)}${capHtml}${buildFaFinalRecapHtml(state, team)}`;
+    document.getElementById('fa-view-rosters-btn').addEventListener('click', () => {
+      renderFaRosterView(team.cityabbr);
+    });
+    document.getElementById('fa-reset-sim-btn').addEventListener('click', () => {
+      faSimState = null;
+      renderFreeAgencyResult(team.cityabbr);
+    });
+    const downloadRosterBtn = document.getElementById('fa-download-roster-btn');
+    if (downloadRosterBtn) {
+      downloadRosterBtn.addEventListener('click', () => {
+        const statusEl = document.getElementById('fa-export-status');
+        try {
+          const result = buildFreeAgencyExport(state);
+          // Hard safety check: never hand back a file that doesn't
+          // re-parse as valid JSON matching the same top-level shape -
+          // that would mean the splicing corrupted something, and a
+          // broken save file is a much worse outcome than no file at all.
+          const reparsed = JSON.parse(result.rosterText.replace(/\0+$/, ''));
+          if (!reparsed || !Array.isArray(reparsed.ROOT)) throw new Error('Unexpected file structure after export.');
+
+          downloadTextFile(result.rosterText, 'roster_user.json', 'application/json');
+          rosterText = result.rosterText; // keep the live session in sync too, same as Trade Machine does
+          if (result.hofText) hofText = result.hofText;
+          if (statusEl) statusEl.textContent = 'Downloaded roster_user.json - replace it in your save folder to make it real in-game.';
+          setTimeout(tryBuild, 50); // deferred so the confirmation message above actually paints before the page refreshes
+        } catch (e) {
+          if (statusEl) { statusEl.textContent = 'Export failed safety check, so nothing was downloaded: ' + e.message + '. Your original save is untouched - please report this.'; statusEl.style.color = '#FF4D4D'; }
+        }
+      });
+    }
+    const downloadHofBtn = document.getElementById('fa-download-hof-btn');
+    if (downloadHofBtn) {
+      downloadHofBtn.addEventListener('click', () => {
+        const statusEl = document.getElementById('fa-export-status');
+        try {
+          const result = buildFreeAgencyExport(state);
+          JSON.parse(result.rosterText.replace(/\0+$/, '')); // same safety check before touching hof.txt too
+          downloadTextFile(result.hofText, 'hof.txt', 'text/plain');
+          rosterText = result.rosterText;
+          hofText = result.hofText;
+          if (statusEl) statusEl.textContent = 'Downloaded hof.txt with award references updated for any traded Hall of Famers.';
+          setTimeout(tryBuild, 50);
+        } catch (e) {
+          if (statusEl) { statusEl.textContent = 'Export failed safety check, so nothing was downloaded: ' + e.message; statusEl.style.color = '#FF4D4D'; }
+        }
+      });
+    }
+    return;
+  }
+
+  const ufas = faSortEntries(state.pool.map(e => ({
+    player: e.player, team: e.originalTeam,
+    ask: estimateFreeAgentAsk(e.player, lastRosterTeams),
+    interest: computeInterestScore(e.player, e.originalTeam, team),
+  })));
+
+  const pendingPids = Object.keys(state.userOffers);
+  const pendingHtml = pendingPids.length ? pendingPids.map(pid => {
+    const entry = state.pool.find(e => e.pid === pid);
+    if (!entry) return '';
+    const offer = state.userOffers[pid];
+    return `<div class="fa-pending-row">
+      <span>${esc(entry.player.fname.charAt(0))}. ${esc(entry.player.lname)} (${esc(entry.player.position)})</span>
+      <span>$${esc(offer.salary.toFixed(1))}M / ${esc(offer.years)}Y</span>
+      <button class="fa-pending-remove" data-pid="${esc(pid)}">Remove</button>
+    </div>`;
+  }).join('') : '<div class="empty-note" style="text-align:left;">No offers queued yet this round - tap a player below.</div>';
+
+  const cutHtml = [...state.cutPids].map(pid => {
+    const entry = state.pool.find(e => e.pid === pid);
+    if (!entry) return ''; // already signed elsewhere - cut intent satisfied, nothing more to show
+    return `<div class="fa-pending-row">
+      <span>${esc(entry.player.fname.charAt(0))}. ${esc(entry.player.lname)} (${esc(entry.player.position)})</span>
+      <span style="color:#FF4D4D;">Moving on</span>
+      <button class="fa-cut-undo" data-pid="${esc(pid)}">Undo</button>
+    </div>`;
+  }).join('');
+
+  const lastRoundHtml = state.log.length ? buildFaRoundLogHtml(state.log[state.log.length - 1]) : '';
+
+  const activeThreats = Object.entries(state.competingOffers);
+  const threatAlertHtml = activeThreats.length ? `
+    <div class="dp-identity-card" style="border-left: 3px solid #FF9F40; margin-top:10px;">
+      <div class="dp-identity-label" style="color:#FF9F40;">\u26A0 ${esc(activeThreats.length)} COMPETING OFFER${activeThreats.length === 1 ? '' : 'S'} ON YOUR PLAYERS</div>
+      <div class="dp-identity-detail">${activeThreats.map(([pid, t]) => {
+        const entry = state.pool.find(e => e.pid === pid);
+        return entry ? `${esc(entry.player.fname.charAt(0))}. ${esc(entry.player.lname)} - ${esc(t.aiTeam.city)} offered $${esc(t.salary.toFixed(1))}M/${esc(t.years)}Y` : '';
+      }).filter(Boolean).join(' &nbsp;·&nbsp; ')}</div>
+      <div class="dp-identity-strategy">Match or beat it with your own offer this round, or they sign away at the start of next round. Highlighted orange below.</div>
+    </div>
+  ` : '';
+
+  const boardHtml = buildFaTwoColumnBoardHtml(ufas, team, state);
+  window.__faTargetTeam = team;
+
+  resultEl.innerHTML = `
+    ${buildFaSalarySummaryHtml(team, state)}
+    <div class="dp-identity-card" style="border-left: 3px solid var(--amber);">
+      <div class="dp-identity-label" style="color:var(--amber);">ROUND ${esc(state.round)} OF ${esc(state.maxRounds)}</div>
+      <div class="dp-identity-detail">${esc(state.pool.length)} players remaining on the market · ${esc(state.signings.length)} signed so far${state.eliteLockedIn.length ? ` · ${esc(state.eliteLockedIn.length)} elite player(s) locked in with their original team` : ''} · Gold name = offer queued, red name = marked "moving on," orange pulsing = competing offer needs a response.</div>
+    </div>
+    ${threatAlertHtml}
+    ${boardHtml}
+    <div class="aa-column-title" style="margin-top:16px;">YOUR PENDING OFFERS THIS ROUND</div>
+    <div class="dp-unit-card" style="border-left-color: var(--amber);">${pendingHtml}</div>
+    ${cutHtml ? `
+    <div class="aa-column-title" style="margin-top:16px;">PLAYERS YOU'RE MOVING ON FROM</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">If nobody signs them by the end of Round 5, they're auto-swapped for a replacement at the same position.</p>
+    <div class="dp-unit-card" style="border-left-color: #FF4D4D;">${cutHtml}</div>
+    ` : ''}
+    <button class="load-btn ready" id="fa-advance-round-btn" style="margin: 12px 0;">ADVANCE TO ROUND ${esc(state.round + 1 > state.maxRounds ? 'RESULTS' : state.round + 1)}</button>
+    <button class="load-btn" id="fa-view-rosters-btn-inline" style="margin: 0 0 12px 8px;">View Current Rosters</button>
+    <button class="load-btn" id="fa-reset-sim-btn-inline" style="margin: 0 0 12px 8px;">Reset Simulation</button>
+    ${lastRoundHtml}
+    ${capHtml}
+  `;
+
+  wireFaBoardClicks(resultEl, team, state);
+  resultEl.querySelectorAll('.fa-pending-remove').forEach(btn => {
+    btn.addEventListener('click', () => {
+      delete state.userOffers[btn.dataset.pid];
+      renderFreeAgencyResult(team.cityabbr);
+    });
+  });
+  resultEl.querySelectorAll('.fa-cut-undo').forEach(btn => {
+    btn.addEventListener('click', () => {
+      state.cutPids.delete(btn.dataset.pid);
+      renderFreeAgencyResult(team.cityabbr);
+    });
+  });
+  document.getElementById('fa-advance-round-btn').addEventListener('click', () => {
+    // Warn before advancing if there are still unresolved pending UFAs on
+    // your own team with no offer queued this round - easy to lose track
+    // of, and the consequence (auto-swapped for often a much lower-value
+    // replacement at the end of Round 5) can be a real, hard-to-undo hit
+    // to payroll and roster quality if it catches you by surprise.
+    const unaddressed = state.pool.filter(e =>
+      e.originalTeam.cityabbr === team.cityabbr && !state.userOffers[e.pid] && !state.cutPids.has(e.pid)
+    );
+    if (unaddressed.length > 0) {
+      const isLastRound = state.round >= state.maxRounds;
+      const warning = isLastRound
+        ? `You have ${unaddressed.length} pending free agent(s) with no offer queued. This is the LAST round - any still unsigned after this get auto-swapped away for a replacement (often a lower-value player), which can meaningfully hit your payroll. Advance anyway?`
+        : `You have ${unaddressed.length} pending free agent(s) with no offer queued this round. If they're never re-signed by the end of Round 5, they'll be auto-swapped away for a replacement (often lower-value). Advance anyway?`;
+      if (!window.confirm(warning)) return;
+    }
+    faAdvanceRound(state);
+    renderFreeAgencyResult(team.cityabbr);
+  });
+  document.getElementById('fa-view-rosters-btn-inline').addEventListener('click', () => {
+    renderFaRosterView(team.cityabbr);
+  });
+  document.getElementById('fa-reset-sim-btn-inline').addEventListener('click', () => {
+    faSimState = null;
+    renderFreeAgencyResult(team.cityabbr);
+  });
+}
+
+let faSortKey = 'skill';
+let faSortDir = 'desc';
+let faPositionFilter = 'ALL';
+
+const FA_SORT_ACCESSORS = {
+  pos: e => e.player.position || '',
+  name: e => e.player.lname || '',
+  from: e => e.team.cityabbr || '',
+  age: e => e.player.age || 0,
+  skill: e => e.player.skill || 0,
+  ask: e => e.ask.askSalary || 0,
+  years: e => e.ask.askYears || 0,
+  interest: e => e.interest || 0,
+};
+
+function faSortEntries(entries) {
+  const accessor = FA_SORT_ACCESSORS[faSortKey] || FA_SORT_ACCESSORS.skill;
+  const dir = faSortDir === 'asc' ? 1 : -1;
+  return [...entries].sort((a, b) => {
+    const av = accessor(a), bv = accessor(b);
+    if (typeof av === 'string') return av.localeCompare(bv) * dir;
+    return (av - bv) * dir;
+  });
+}
+
+function faSetSort(key) {
+  if (faSortKey === key) {
+    faSortDir = faSortDir === 'asc' ? 'desc' : 'asc';
+  } else {
+    faSortKey = key;
+    faSortDir = (key === 'name' || key === 'pos' || key === 'from') ? 'asc' : 'desc';
+  }
+}
+
+function faSortHeaderCell(label, key, style) {
+  const active = faSortKey === key;
+  const arrow = active ? (faSortDir === 'asc' ? ' \u25B2' : ' \u25BC') : '';
+  return `<span class="fa-sort-header${active ? ' active' : ''}" data-sort-key="${esc(key)}" style="${style || ''}">${esc(label)}${arrow}</span>`;
+}
+
+function buildFaBoardHtml(entries, team, totalCount, opts) {
+  const { title, note, keyPrefix, state, allowCut, colorizeFrom, showFrom = true } = opts;
+  window.__faBoardCaches = window.__faBoardCaches || {};
+  window.__faBoardCaches[keyPrefix] = entries;
+
+  const rows = entries.map(({ player: p, team: t, ask, interest }, i) => {
+    const arrow = interestArrow(interest);
+    const pidStr = String(p.pid);
+    const threat = state && state.competingOffers[pidStr];
+    const isCut = state && state.cutPids.has(pidStr);
+    const hasOffer = state && state.userOffers[pidStr] && !isCut;
+    const nameClass = threat ? ' fa-name-threatened' : (isCut ? ' fa-name-cut' : (hasOffer ? ' fa-name-offered' : ''));
+    const nameTitle = threat ? `\u26A0 ${threat.aiTeam.city} offered $${threat.salary.toFixed(1)}M/${threat.years}Y - match or beat it this round or they're gone next round` : (isCut ? 'Marked: moving on' : (hasOffer ? 'Offer already queued' : ''));
+    const actionButtons = state ? `
+      <span class="fa-row-actions">
+        <button class="fa-quick-min" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="Queue a minimum offer (65% of ask, their preferred years) - works on easygoing vets, fails on greedy or unhappy ones">Min</button>
+        ${allowCut ? `<button class="fa-quick-cut${isCut ? ' active' : ''}" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="${isCut ? 'Cancel - keep pursuing them' : 'Mark: the team is ready to move on'}">${isCut ? 'Cut \u2713' : 'Cut'}</button>` : ''}
+      </span>` : '';
+    const noteParts = [];
+    if (ask.isTopTier) noteParts.push('Elite (top-10 at position)');
+    if (ask.teamFriendly) noteParts.push('Team-friendly personality');
+    const noteTitle = noteParts.join(' · ');
+    const fromCell = !showFrom ? '' : colorizeFrom
+      ? (() => { const b = singleTeamBranding(t.cityabbr); return `<span class="fa-team-bubble" style="background:${b.primary}; color:${b.secondary};">${esc(t.cityabbr)}</span>`; })()
+      : esc(t.cityabbr);
+    return `
+    <div class="dp-row fa-offer-row" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" style="cursor:pointer;">
+      <span class="dp-pos">${esc(p.position)}</span>
+      <span class="dp-name${nameClass}" title="${nameTitle}">${threat ? '\u26A0 ' : ''}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
+      ${showFrom ? `<span class="dp-age" style="flex:0 0 34px; ${colorizeFrom ? 'display:flex; justify-content:center;' : ''}">${fromCell}</span>` : ''}
+      <span class="dp-age">${esc(Math.round(p.age))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.skill))};">${esc(Math.round(p.skill))}</span>
+      <span class="dp-sal" style="flex:0 0 60px;">$${esc(ask.askSalary.toFixed(1))}M</span>
+      <span class="dp-cnt" style="flex:0 0 30px;">${esc(ask.askYears)}Y</span>
+      <span class="dp-age" style="flex:0 0 30px; color:${arrow.color}; font-weight:800; text-align:center;" title="${esc(arrow.label)}">${arrow.symbol}</span>
+      <span class="fa-notes-icons" title="${esc(noteTitle)}">${ask.isTopTier ? '\u2B50' : ''}${ask.teamFriendly ? '\uD83E\uDD1D' : ''}</span>
+      ${actionButtons}
+    </div>`;
+  }).join('');
+
+  return `
+    <div class="aa-column-title" style="margin-top:12px;">${esc(title)}</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">${note}</p>
+    <div class="dp-group" style="max-height:500px; overflow-y:auto;">
+      <div class="dp-row dp-header">
+        ${faSortHeaderCell('Pos', 'pos')}${faSortHeaderCell('Name', 'name')}
+        ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 34px;') : ''}${faSortHeaderCell('Age', 'age')}
+        ${faSortHeaderCell('SKL', 'skill', 'flex:0 0 30px;')}${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 60px;')}
+        ${faSortHeaderCell('Yrs', 'years', 'flex:0 0 30px;')}${faSortHeaderCell('Int', 'interest', 'flex:0 0 30px; text-align:center;')}<span class="dp-age" style="flex:0 0 40px; text-align:center;">\u2B50\uD83E\uDD1D</span>
+        ${state ? '<span class="dp-age" style="flex:0 0 74px;">Quick</span>' : ''}
+      </div>
+      ${rows || '<div class="empty-note" style="padding:10px;">None right now.</div>'}
+    </div>
+  `;
+}
+
+// Splits the board into two columns: your own team's pending UFAs (people
+// you're at risk of losing - re-sign them here) on the left with a team-
+// colored banner, and everyone else's UFAs (the market you could pursue)
+// on the right. Both share the same sort state and offer-highlighting.
+// Cut buttons only appear in the "mine" column - only makes sense on your
+// own players. Team-color bubbles on the From column only appear in the
+// League Market column - your own team is already obvious from the banner.
+// "mine" also drops the From column entirely (always the same team,
+// genuinely no information there) to give Min/Cut enough room to render
+// without getting clipped.
+function buildFaTwoColumnBoardHtml(allEntries, team, state) {
+  const filtered = faPositionFilter === 'ALL' ? allEntries : allEntries.filter(e => e.player.position === faPositionFilter);
+  const mine = filtered.filter(e => e.team.cityabbr === team.cityabbr);
+  const others = filtered.filter(e => e.team.cityabbr !== team.cityabbr);
+  const brand = singleTeamBranding(team.cityabbr);
+
+  const mineHtml = buildFaBoardHtml(mine.slice(0, 75), team, mine.length, {
+    title: `YOUR PENDING FREE AGENTS - ${esc(mine.length)}`,
+    note: `Currently on your own roster and hitting the open market. Re-sign them here before another team does. Red name = marked "moving on" - if nobody signs them by the end of Round 5, they're auto-swapped for a replacement.`,
+    keyPrefix: 'mine', state, allowCut: true, colorizeFrom: false, showFrom: false,
+  });
+  const othersHtml = buildFaBoardHtml(others.slice(0, 75), team, others.length, {
+    title: `LEAGUE MARKET - ${esc(others.length)} UFAs${faPositionFilter !== 'ALL' ? ` (${esc(faPositionFilter)})` : ''}`,
+    note: `Everyone else's free agents. Tap a column header to sort, tap a player to make an offer. \u2B06 = high interest in ${esc(team.city)}, \u2B07 = very unlikely.`,
+    keyPrefix: 'others', state, allowCut: false, colorizeFrom: true, showFrom: true,
+  });
+
+  const filterOptions = ['ALL', ...DP_ALL_POSITIONS].map(p =>
+    `<option value="${esc(p)}" ${faPositionFilter === p ? 'selected' : ''}>${p === 'ALL' ? 'All Positions' : esc(p)}</option>`
+  ).join('');
+
+  return `
+    <div class="fa-position-filter">
+      <label for="fa-position-filter-select">Filter by position:</label>
+      <select id="fa-position-filter-select">${filterOptions}</select>
+    </div>
+    <div class="fa-two-col">
+      <div class="fa-col">
+        <div class="fa-col-banner" style="background:${brand.primary}; color:${brand.secondary};">${esc(team.city)} ${esc(team.name)}</div>
+        ${mineHtml}
+      </div>
+      <div class="fa-col">
+        <div class="fa-col-banner fa-col-banner-neutral">REST OF THE LEAGUE</div>
+        ${othersHtml}
+      </div>
+    </div>
+  `;
+}
+
+function wireFaBoardClicks(resultEl, team, state) {
+  const posFilterEl = resultEl.querySelector('#fa-position-filter-select');
+  if (posFilterEl) {
+    posFilterEl.addEventListener('change', () => {
+      faPositionFilter = posFilterEl.value;
+      renderFreeAgencyResult(team.cityabbr);
+    });
+  }
+  resultEl.querySelectorAll('.fa-offer-row').forEach(row => {
+    row.addEventListener('click', () => {
+      const key = row.dataset.faKey;
+      const idx = Number(row.dataset.faIdx);
+      const entry = (window.__faBoardCaches && window.__faBoardCaches[key]) ? window.__faBoardCaches[key][idx] : null;
+      if (entry) openOfferModal(entry.player, entry.team, team, state);
+    });
+  });
+  resultEl.querySelectorAll('.fa-sort-header').forEach(h => {
+    h.addEventListener('click', () => {
+      faSetSort(h.dataset.sortKey);
+      renderFreeAgencyResult(team.cityabbr);
+    });
+  });
+  if (state) {
+    resultEl.querySelectorAll('.fa-quick-min').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = btn.dataset.faKey;
+        const idx = Number(btn.dataset.faIdx);
+        const entry = (window.__faBoardCaches && window.__faBoardCaches[key]) ? window.__faBoardCaches[key][idx] : null;
+        if (entry) {
+          const queued = faQueueMinimumOffer(entry, team, state);
+          if (queued) {
+            renderFreeAgencyResult(team.cityabbr);
+          } else {
+            openOfferModal(entry.player, entry.team, team, state); // blocked by cap or offer-count limit - show why instead of failing silently
+          }
+        }
+      });
+    });
+    resultEl.querySelectorAll('.fa-quick-cut').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = btn.dataset.faKey;
+        const idx = Number(btn.dataset.faIdx);
+        const entry = (window.__faBoardCaches && window.__faBoardCaches[key]) ? window.__faBoardCaches[key][idx] : null;
+        if (entry) {
+          faToggleCut(String(entry.player.pid), state);
+          renderFreeAgencyResult(team.cityabbr);
+        }
+      });
+    });
+  }
+}
+
+function buildFaRoundLogHtml(roundLog) {
+  const userLines = roundLog.userResults.map(r =>
+    `<li>${r.accepted ? '\u2705' : '\u274C'} ${esc(r.player.fname.charAt(0))}. ${esc(r.player.lname)} - ${r.accepted ? `signed!${r.giveBack ? ` (sent ${esc(r.giveBack.fname.charAt(0))}. ${esc(r.giveBack.lname)} back to ${esc(r.player.position)}'s original team to balance the roster)` : ''}` : `declined (${esc(r.reaction.label)})`}</li>`
+  ).join('');
+  const eliteLines = roundLog.eliteLockIns.map(p =>
+    `<li>\uD83D\uDD12 ${esc(p.fname.charAt(0))}. ${esc(p.lname)} (elite, no offers received) re-signed with original team</li>`
+  ).join('');
+  const cutLines = (roundLog.cutReplacements || []).map(({ cutPlayer, replacement }) =>
+    `<li>\u2702\uFE0F ${esc(cutPlayer.fname.charAt(0))}. ${esc(cutPlayer.lname)} moved on (nobody signed them) - ${replacement ? `received ${esc(replacement.fname.charAt(0))}. ${esc(replacement.lname)} in return` : 'no replacement was available'}</li>`
+  ).join('');
+  const newThreatLines = (roundLog.newThreats || []).map(({ player, aiTeam, salary, years }) =>
+    `<li>\u26A0 ${esc(aiTeam.city)} made a competing offer on ${esc(player.fname.charAt(0))}. ${esc(player.lname)} - $${esc(salary.toFixed(1))}M/${esc(years)}Y. Respond next round or they're gone.</li>`
+  ).join('');
+  const threatsLostLines = (roundLog.threatsLost || []).map(({ player, toTeam, giveBack }) =>
+    `<li>\uD83D\uDC94 ${esc(player.fname.charAt(0))}. ${esc(player.lname)} signed with ${esc(toTeam.cityabbr)} - the competing offer from last round went unanswered${giveBack ? ` (received ${esc(giveBack.fname.charAt(0))}. ${esc(giveBack.lname)} in return)` : ''}</li>`
+  ).join('');
+  if (!userLines && !roundLog.aiSigningsCount && !eliteLines && !cutLines && !newThreatLines && !threatsLostLines) return '';
+  return `
+    <div class="aa-column-title" style="margin-top:16px;">ROUND ${esc(roundLog.round)} RECAP</div>
+    <ul class="fa-recap-list">
+      ${userLines}
+      ${threatsLostLines}
+      ${newThreatLines}
+      ${roundLog.aiSigningsCount ? `<li>\uD83C\uDFC8 ${esc(roundLog.aiSigningsCount)} other signing(s) happened around the league this round (each balanced with a return player at the same position).</li>` : ''}
+      ${eliteLines}
+      ${cutLines}
+    </ul>
+  `;
+}
+
+function buildFaFinalRecapHtml(state, team) {
+  const mySignings = state.signings.filter(s => s.wasUser);
+  const cutReplacements = state.signings.filter(s => s.isCutReplacement);
+  const unresolvedDepartures = state.signings.filter(s => s.isUnresolvedDeparture);
+  const otherSignings = state.signings.filter(s => !s.wasUser && !s.isCutReplacement && !s.isUnresolvedDeparture);
+  const myRows = mySignings.length
+    ? mySignings.map(s => `<li>${esc(s.player.fname.charAt(0))}. ${esc(s.player.lname)} (${esc(s.player.position)}) from ${esc(s.fromTeam.cityabbr)} - $${esc(s.salary.toFixed(1))}M/${esc(s.years)}Y, Round ${esc(s.round)}${s.giveBack ? ` — sent back ${esc(s.giveBack.fname.charAt(0))}. ${esc(s.giveBack.lname)}` : ''}</li>`).join('')
+    : '<li>No signings made.</li>';
+  const cutRows = cutReplacements.length
+    ? cutReplacements.map(s => `<li>${esc(s.player.fname.charAt(0))}. ${esc(s.player.lname)} moved on to ${esc(s.toTeam.cityabbr)} (nobody signed them) - ${s.giveBack ? `received ${esc(s.giveBack.fname.charAt(0))}. ${esc(s.giveBack.lname)} in return` : 'no replacement was available'}</li>`).join('')
+    : '';
+  const unresolvedRows = unresolvedDepartures.length
+    ? unresolvedDepartures.map(s => `<li>${esc(s.player.fname.charAt(0))}. ${esc(s.player.lname)} left for ${esc(s.toTeam.cityabbr)} - you couldn't retain them (cap, offer limit, or every offer was declined)${s.giveBack ? `, received ${esc(s.giveBack.fname.charAt(0))}. ${esc(s.giveBack.lname)} in return` : ''}</li>`).join('')
+    : '';
+  const otherRows = otherSignings.slice(0, 40).map(s => `<li>${esc(s.toTeam.cityabbr)} signed ${esc(s.player.fname.charAt(0))}. ${esc(s.player.lname)} (${esc(s.player.position)}) from ${esc(s.fromTeam.cityabbr)}, Round ${esc(s.round)}${s.giveBack ? ` (sent back ${esc(s.giveBack.fname.charAt(0))}. ${esc(s.giveBack.lname)})` : ''}</li>`).join('');
+
+  // Dry-run the export now so the recap can show exactly what's about to
+  // be saved (including any Hall of Fame trade) before the user commits
+  // to downloading anything.
+  const exportPreview = (typeof rosterText === 'string' && rosterText) ? buildFreeAgencyExport(state) : null;
+  const hofNewsHtml = exportPreview && exportPreview.hofTradeNews.length ? `
+    <div class="fa-breaking-news">
+      <div class="fa-breaking-news-label">\uD83D\uDCF0 BREAKING NEWS</div>
+      ${exportPreview.hofTradeNews.map(({ awards }) => {
+        const topAward = awards[0];
+        return `<div class="fa-breaking-news-item">A Hall of Famer has been traded! ${esc(topAward.name || '')} (${esc(topAward.trophy)}, Year ${esc(topAward.year)}) is on the move.</div>`;
+      }).join('')}
+    </div>
+  ` : '';
+
+  const saveSectionHtml = `
+    <div class="aa-column-title" style="margin-top:20px;">SAVE YOUR CHANGES</div>
+    ${!rosterText ? `<p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Load the roster_user.json file itself (not just its data) alongside your other files to enable exporting - this planner can only write back what it was originally given.</p>`
+      : `<p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Not happy with how this went? Use "Start a New Simulation" below FIRST - once you download, treat it as final. Downloading writes real changes into a copy of your roster_user.json (and hof.txt, if loaded) using the same pid/tid-preserving swap logic as Trade Machine: everything about a player moves except their pid and tid, which stay fixed to the roster slot. Any Hall of Fame award history for a traded player is re-pointed to follow them, so it doesn't get misattributed to whoever's sitting in their old slot now.</p>`}
+    ${hofNewsHtml}
+    ${rosterText ? `
+    <button class="load-btn ready" id="fa-download-roster-btn" style="margin-top:8px;">Download Updated roster_user.json</button>
+    ${hofText ? `<button class="load-btn" id="fa-download-hof-btn" style="margin-top:8px; margin-left:8px;">Download Updated hof.txt</button>` : ''}
+    <div class="p-note" id="fa-export-status" style="margin-top:8px;"></div>
+    ` : ''}
+  `;
+
+  return `
+    <div class="aa-column-title" style="margin-top:20px;">FREE AGENCY COMPLETE</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">All 5 rounds resolved. ${esc(state.eliteLockedIn.length)} elite player(s) never hit the open market. Any of your own pending free agents you never successfully retained (cap-blocked, offer-limit-blocked, or simply declined) were forced to leave at the end of round 5, balanced with a same-position player sent back the other way - so every team still has the exact same roster count at every position they started with. This is a planning result only - nothing here changed your actual save.</p>
+    <div class="aa-column-title" style="margin-top:16px;">${esc(team.city)} Signings</div>
+    <ul class="fa-recap-list">${myRows}</ul>
+    ${unresolvedRows ? `
+    <div class="aa-column-title" style="margin-top:16px;">Couldn't Retain (Cap/Offer-Limit/Declined)</div>
+    <ul class="fa-recap-list">${unresolvedRows}</ul>
+    ` : ''}
+    ${cutRows ? `
+    <div class="aa-column-title" style="margin-top:16px;">Cuts You Moved On From</div>
+    <ul class="fa-recap-list">${cutRows}</ul>
+    ` : ''}
+    <div class="aa-column-title" style="margin-top:16px;">Around the League (${esc(otherSignings.length)} total)</div>
+    <ul class="fa-recap-list">${otherRows}</ul>
+    ${saveSectionHtml}
+    <button class="load-btn ready" id="fa-view-rosters-btn" style="margin-top:14px;">View Post-FA Rosters</button>
+    <button class="load-btn" id="fa-reset-sim-btn" style="margin-top:14px; margin-left:8px;">Start a New Simulation</button>
+  `;
+}
+
 function renderDraftPrepResult(cityabbr) {
   const resultEl = document.getElementById('draft-prep-result');
   if (!resultEl || !lastRosterTeams) return;
@@ -6223,11 +8008,197 @@ function closePlayerModal() {
   document.getElementById('player-modal-backdrop').classList.remove('open');
 }
 
+// FREE AGENCY: interactive offer modal. Salary/years sliders default to
+// the player's computed "ask," and the interest arrow updates live as the
+// offer is adjusted - this does NOT actually sign the player or touch any
+// save data, it's a what-if tool for planning your real in-game moves.
+function renderOfferReaction(player, currentTeam, targetTeam, simState) {
+  const salaryInput = document.getElementById('offer-salary-input');
+  const yearsInput = document.getElementById('offer-years-input');
+  const offerSalary = Number(salaryInput.value) || 0;
+  const offerYears = Number(yearsInput.value) || 1;
+  const reaction = computeOfferReaction(player, currentTeam, targetTeam, offerSalary, offerYears);
+
+  document.getElementById('offer-salary-display').textContent = `$${offerSalary.toFixed(1)}M/yr`;
+  document.getElementById('offer-years-display').textContent = `${offerYears}Y`;
+  const arrowEl = document.getElementById('offer-reaction-arrow');
+  arrowEl.textContent = reaction.symbol;
+  arrowEl.style.color = reaction.color;
+  document.getElementById('offer-reaction-label').textContent = reaction.label;
+  document.getElementById('offer-reaction-label').style.color = reaction.color;
+
+  const eliteNote = document.getElementById('offer-elite-note');
+  if (eliteNote) {
+    eliteNote.style.display = reaction.ask.isTopTier ? 'block' : 'none';
+  }
+
+  // Cap enforcement: we don't have a real in-game salary cap penalizing
+  // overspending, so this app-level cap only means something if it's
+  // actually enforced here, not just displayed elsewhere. Blocks the
+  // submit button outright rather than just warning, since a warning the
+  // user can click past isn't really a limit. Both the dollar cap and the
+  // new-offer-count limit are evaluated against LIVE standing (via
+  // simState), not a frozen start-of-sim snapshot - otherwise a team
+  // starting outside the capped bracket could spend/poach freely for the
+  // entire simulation regardless of how high it climbs. Neither
+  // restriction applies to a re-sign of your own player.
+  const capStatusEl = document.getElementById('offer-cap-status');
+  const submitBtn = document.getElementById('offer-submit-btn');
+  if (capStatusEl && simState) {
+    const isPoach = currentTeam.cityabbr !== targetTeam.cityabbr;
+    const cap = computeSigningCap(targetTeam, lastRosterTeams, simState);
+    let overCap = false;
+    let overOfferLimit = false;
+    const lines = [];
+
+    if (cap && cap.cap != null) {
+      const spentSoFar = faComputeSpentSoFar(simState, targetTeam.cityabbr);
+      const pendingExcl = faComputePendingQueuedTotal(simState, String(player.pid));
+      const projected = spentSoFar + pendingExcl + offerSalary;
+      overCap = projected > cap.cap;
+      lines.push(`Projected new-signing spend: <strong style="color:${overCap ? '#FF4D4D' : '#39FF6A'};">$${projected.toFixed(1)}M</strong> of $${cap.cap.toFixed(1)}M cap${overCap ? ' - OVER CAP' : ''}`);
+    }
+    if (isPoach && cap && cap.maxNewOffers != null) {
+      const alreadyCounted = simState.newOfferAttempts.has(String(player.pid));
+      const used = faCountNewOfferUsage(simState, targetTeam.cityabbr, true) - (alreadyCounted ? 1 : 0); // don't double-count this same offer if updating an existing queued one
+      overOfferLimit = used >= cap.maxNewOffers;
+      lines.push(`New-team offers: <strong style="color:${overOfferLimit ? '#FF4D4D' : '#39FF6A'};">${used} of ${cap.maxNewOffers}</strong> used${overOfferLimit ? ' - LIMIT REACHED, this counts as a new poaching offer' : ''}`);
+    }
+
+    if (lines.length) {
+      const blocked = overCap || overOfferLimit;
+      capStatusEl.innerHTML = lines.join('<br>');
+      capStatusEl.style.color = blocked ? '#FF4D4D' : 'var(--muted)';
+      if (submitBtn) {
+        submitBtn.disabled = blocked;
+        submitBtn.style.opacity = blocked ? '0.4' : '1';
+        submitBtn.style.cursor = blocked ? 'not-allowed' : 'pointer';
+      }
+    } else {
+      capStatusEl.textContent = 'No restrictions on this offer right now.';
+      capStatusEl.style.color = 'var(--muted)';
+    }
+  }
+}
+
+function traitTier(val, positiveWhenHigh) {
+  if (val == null) return { label: 'Unknown', color: 'var(--muted)' };
+  const label = val >= 70 ? 'High' : val >= 40 ? 'Medium' : 'Low';
+  const isGoodEnd = positiveWhenHigh ? val >= 70 : val < 40;
+  const isBadEnd = positiveWhenHigh ? val < 40 : val >= 70;
+  const color = isGoodEnd ? '#39FF6A' : isBadEnd ? '#FF4D4D' : '#FFC93C';
+  return { label, color };
+}
+
+function openOfferModal(player, currentTeam, targetTeam, simState) {
+  const ask = estimateFreeAgentAsk(player, lastRosterTeams);
+  const bodyEl = document.getElementById('offer-modal-body');
+  const alreadyQueued = simState && simState.userOffers[String(player.pid)];
+  const prevSalary = Number(player.salary) || 0;
+  const pctChange = prevSalary > 0 ? ((ask.askSalary - prevSalary) / prevSalary) * 100 : null;
+
+  const greedTier = traitTier(player.pers_greed, false);
+  const loyaltyTier = traitTier(player.pers_loyalty, true);
+  const moraleTier = traitTier(player.morale, true);
+  const winnerTier = traitTier(player.pers_winner, true);
+  const greedRead = player.pers_greed >= 70 ? 'wants top dollar - a lowball offer will likely fail' : player.pers_greed >= 40 ? 'expects fair market value' : 'money isn\'t the main driver for this player';
+  const loyaltyRead = player.pers_loyalty >= 70 ? 'values commitment - more years matters more than max salary' : player.pers_loyalty >= 40 ? 'open to a reasonable term length' : 'not especially attached - years don\'t move the needle much';
+  const moraleRead = player.morale != null && player.morale < 20 ? 'genuinely unhappy right now - even a fair offer may not land' : player.morale != null && player.morale < 35 ? 'in a rough spot - harder to sign than the money alone suggests' : player.morale != null && player.morale >= 70 ? 'in a good headspace - easier to sign' : 'no strong pull either way from mood';
+  const targetEliteCount = faCountEliteOnRoster(targetTeam);
+  const leagueAvgElite = faLeagueAvgEliteCount();
+  const eliteAboveAvg = targetEliteCount > leagueAvgElite;
+  const winnerRead = player.pers_winner >= 70
+    ? `wants to win NOW - counts Elite talent on the roster as a real signal. ${esc(targetTeam.city)} has ${esc(targetEliteCount)} Elite player(s) (league average ${leagueAvgElite.toFixed(1)}), which ${eliteAboveAvg ? 'is a real draw' : 'is a tough sell for someone this competitive'}`
+    : player.pers_winner >= 40
+    ? `cares some about the team's competitiveness, but it's not the deciding factor`
+    : `not particularly driven by team success - money and situation matter more than the roster's ceiling`;
+
+  const threat = simState && simState.competingOffers[String(player.pid)];
+
+  bodyEl.innerHTML = `
+    <div class="p-name">${esc(player.fname)} ${esc(player.lname)}</div>
+    <div class="p-meta">Currently: ${esc(currentTeam.city)} · <span style="color:${positionColor(player.position)}">${esc(player.position)}</span> · ${esc(Math.round(player.skill))} SKL · Age ${esc(Math.round(player.age))}</div>
+    <div class="p-note" style="margin-top:8px;">Making an offer FROM: <strong>${esc(targetTeam.city)} ${esc(targetTeam.name)}</strong></div>
+    ${threat ? `<div class="p-note" style="margin-top:8px; color:#FF9F40; font-weight:700;">\u26A0 ${esc(threat.aiTeam.city)} has already offered $${esc(threat.salary.toFixed(1))}M/${esc(threat.years)}Y. Beat it this round or they sign there next round.</div>` : ''}
+
+    <div class="p-section-label">Contract Comparison</div>
+    <div class="p-note">Previous salary: <strong>$${esc(prevSalary.toFixed(1))}M/yr</strong>${pctChange != null ? ` · Their ask is <strong style="color:${pctChange >= 0 ? '#FF9F40' : '#39FF6A'};">${pctChange >= 0 ? '+' : ''}${esc(pctChange.toFixed(0))}%</strong> from that` : ''}</div>
+    <div class="p-note">Their ask (estimated): <strong>$${esc(ask.askSalary.toFixed(1))}M/yr for ${esc(ask.askYears)} years</strong>${ask.teamFriendly ? ' - but their personality suggests they may take a team-friendly discount.' : ''}</div>
+    <div class="p-note" id="offer-elite-note" style="display:none; color:#FFC93C;">This is a top-10-at-position Elite player - per house rule, expect Elite players who aren't greed-driven to stay put unless this offer is compelling.</div>
+
+    <div class="p-section-label">Personality Read</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Greed</span><span class="fa-trait-val" style="color:${greedTier.color};">${esc(Math.round(player.pers_greed ?? 50))} - ${esc(greedTier.label)}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(greedRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Loyalty</span><span class="fa-trait-val" style="color:${loyaltyTier.color};">${esc(Math.round(player.pers_loyalty ?? 50))} - ${esc(loyaltyTier.label)}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(loyaltyRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Morale</span><span class="fa-trait-val" style="color:${moraleTier.color};">${player.morale != null ? esc(Math.round(player.morale)) + ' - ' + esc(moraleTier.label) : 'Unknown'}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(moraleRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Winner</span><span class="fa-trait-val" style="color:${winnerTier.color};">${player.pers_winner != null ? esc(Math.round(player.pers_winner)) + ' - ' + esc(winnerTier.label) : 'Unknown'}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(winnerRead)}</div>
+
+    <div class="p-section-label">Your Offer</div>
+    <div class="offer-slider-row">
+      <label>Salary: <span id="offer-salary-display"></span></label>
+      <input type="range" id="offer-salary-input" min="0" max="${(ask.askSalary * 2).toFixed(1)}" step="0.1" value="${alreadyQueued ? alreadyQueued.salary.toFixed(1) : ask.askSalary.toFixed(1)}">
+    </div>
+    <div class="offer-slider-row">
+      <label>Years: <span id="offer-years-display"></span></label>
+      <input type="range" id="offer-years-input" min="1" max="5" step="1" value="${alreadyQueued ? alreadyQueued.years : ask.askYears}">
+    </div>
+
+    <div class="p-section-label">Reaction</div>
+    <div class="offer-reaction-box">
+      <div id="offer-reaction-arrow" class="offer-reaction-arrow"></div>
+      <div id="offer-reaction-label" class="offer-reaction-label"></div>
+    </div>
+    ${simState ? `<div class="p-note" id="offer-cap-status" style="margin-top:8px;"></div>` : ''}
+    <div class="p-note" style="margin-top:10px; color:var(--muted);">This is a what-if planning tool only - it doesn't sign the player or change your save file until you submit it as part of an active round. Reaction is a v1 heuristic built from real soft-trait data with invented weights. Even a "High Interest" offer isn't a guaranteed sign - there's real chance built in, so the same offer can go either way.</div>
+    ${simState
+      ? `<button class="load-btn ready" id="offer-submit-btn" style="margin-top:12px; width:100%;">${alreadyQueued ? 'UPDATE QUEUED OFFER' : 'QUEUE THIS OFFER FOR ROUND ' + esc(simState.round)}</button>`
+      : `<p class="p-note" style="margin-top:12px;">Start a Free Agency simulation to actually submit offers - this view is exploration only.</p>`}
+  `;
+  document.getElementById('offer-salary-input').addEventListener('input', () => renderOfferReaction(player, currentTeam, targetTeam, simState));
+  document.getElementById('offer-years-input').addEventListener('input', () => renderOfferReaction(player, currentTeam, targetTeam, simState));
+  renderOfferReaction(player, currentTeam, targetTeam, simState);
+  document.getElementById('offer-modal-backdrop').classList.add('open');
+
+  if (simState) {
+    document.getElementById('offer-submit-btn').addEventListener('click', () => {
+      const salary = Number(document.getElementById('offer-salary-input').value) || 0;
+      const years = Number(document.getElementById('offer-years-input').value) || 1;
+      // Defensive re-check at submit time, in case something changed since the button was last rendered.
+      const isPoach = currentTeam.cityabbr !== targetTeam.cityabbr;
+      const cap = computeSigningCap(targetTeam, lastRosterTeams, simState);
+      if (cap && cap.cap != null) {
+        const projected = faComputeSpentSoFar(simState, targetTeam.cityabbr) + faComputePendingQueuedTotal(simState, String(player.pid)) + salary;
+        if (projected > cap.cap) return; // blocked - button should already be disabled, but don't let a stale click through
+      }
+      if (isPoach && cap && cap.maxNewOffers != null) {
+        const alreadyCounted = simState.newOfferAttempts.has(String(player.pid));
+        const used = faCountNewOfferUsage(simState, targetTeam.cityabbr, true) - (alreadyCounted ? 1 : 0);
+        if (used >= cap.maxNewOffers) return; // blocked - out of new-team offer slots
+      }
+      simState.userOffers[String(player.pid)] = { salary, years };
+      simState.cutPids.delete(String(player.pid));
+      closeOfferModal();
+      renderFreeAgencyResult(simState.myTeamCity);
+    });
+  }
+}
+
+function closeOfferModal() {
+  document.getElementById('offer-modal-backdrop').classList.remove('open');
+}
+document.getElementById('offer-modal-close').addEventListener('click', closeOfferModal);
+document.getElementById('offer-modal-backdrop').addEventListener('click', (e) => {
+  if (e.target.id === 'offer-modal-backdrop') closeOfferModal();
+});
+
 document.getElementById('modal-close').addEventListener('click', closePlayerModal);
 document.getElementById('player-modal-backdrop').addEventListener('click', (e) => {
   if (e.target.id === 'player-modal-backdrop') closePlayerModal();
 });
-document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closePlayerModal(); });
+document.addEventListener('keydown', (e) => { if (e.key === 'Escape') { closePlayerModal(); closeOfferModal(); } });
 
 document.addEventListener('click', (e) => {
   const link = e.target.closest('.player-link');
@@ -6242,6 +8213,7 @@ document.addEventListener('click', (e) => {
 // ---- Tabs ----
 document.querySelectorAll('.tab-btn').forEach(btn => {
   btn.addEventListener('click', () => {
+    if (btn.classList.contains('tab-disabled')) return; // e.g. Free Agency during an in-progress season
     document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     btn.classList.add('active');
