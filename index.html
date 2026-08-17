@@ -1131,7 +1131,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v41</div>
+  <div class="name">LB_RECAP v42</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -2369,11 +2369,20 @@ function faLeagueAvgEliteCount() {
 }
 
 // RFA/UFA split per the stated house rule: 26 and younger stay restricted
-// to their own team, 27 and older hit the open market. (If the boundary
-// should sit differently - e.g. 26 itself going either way - this is the
-// one place to change it.)
+// to their own team, 27 and older hit the open market - BUT ONLY if
+// their contract is actually expiring. This was originally age-only,
+// which was a real bug: it meant every veteran showed up as a pending
+// free agent on every simulation run, regardless of how many years were
+// actually left on a real multi-year deal (confirmed directly - a player
+// with contract=4, three years into a fresh long-term deal, was showing
+// up as an active UFA). Contract never shows 0 in this game's data - "1"
+// is the expiring/walk-year signal that gets processed each offseason,
+// with everything above that decrementing by one per season. A player
+// with 2+ years left is not a free agent this cycle, full stop.
 function isUnrestrictedFreeAgent(player) {
-  return player.age != null && player.age >= 27;
+  if (player.age == null || player.age < 27) return false;
+  if (player.contract == null) return true; // no contract data at all - treat as expiring/unknown rather than silently hiding them
+  return player.contract <= 1;
 }
 
 // v1 asking-price heuristic. Real inputs (salary, skill, soft traits),
