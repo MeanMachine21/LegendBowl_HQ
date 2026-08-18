@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v55</div>
+  <div class="name">LB_RECAP v56</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -8460,12 +8460,12 @@ function renderMatchupCardResult(cityA, cityB) {
       }).join('');
       historyHtml = `<div class="matchup-history"><div class="history-label">Previous Meetings</div>${rows}</div>`;
     } else {
-      historyHtml = `<div class="matchup-history"><div class="history-label">First-ever meeting</div></div>`;
+      historyHtml = `<div class="matchup-history"><div class="history-label">No previous meetings in your loaded data</div><div class="history-hint" style="font-size:10px; color:var(--muted); margin-top:2px;">Could be a genuine first meeting, or these two just haven't played within the seasons currently loaded - connect a Career History file (Coach's Corner) to build real head-to-head across seasons instead of just what's loaded right now.</div></div>`;
     }
   }
 
   function keyPlayersHtml(team, cityabbr) {
-    const top = (team.player || []).slice().sort((a, b) => (b.skill || 0) - (a.skill || 0)).slice(0, 4);
+    const top = (team.player || []).slice().sort((a, b) => (b.skill || 0) - (a.skill || 0)).slice(0, 7);
     if (!top.length) return '';
     const rows = top.map(p => `<div class="roster-row">
       <span class="name">${playerLink(p.pid, cityabbr, p.fname, p.lname, `${p.fname} ${p.lname}`.trim())}</span>
@@ -8495,7 +8495,7 @@ function renderMatchupCardResult(cityA, cityB) {
       <div class="key-players-row">${keyPlayersHtml(teamA, cityA)}${keyPlayersHtml(teamB, cityB)}</div>
       ${historyHtml}
     </div>
-    <div class="predict-disclaimer" style="margin-top:10px; color:var(--amber); font-size:10px;">Odds shown are a made-up model based on current rank — not real betting lines, just for fun.</div>
+    <div class="predict-disclaimer" style="margin-top:10px; color:var(--amber); font-size:10px;">Not real betting lines. Just for fun.</div>
     <div class="obs-controls">
       <button class="go-overlay-btn" id="matchup-preview-btn">PREVIEW OVERLAY</button>
       ${OBS_FILE_SUPPORTED ? '<button class="go-overlay-btn obs-connect-btn" id="matchup-connect-btn">CONNECT LIVE OBS FILE</button>' : ''}
