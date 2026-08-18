@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v53</div>
+  <div class="name">LB_RECAP v54</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -5803,13 +5803,109 @@ function renderLegendBowlBracket(container) {
 
   container.innerHTML = `
     <h2 class="section-title">Playoff Bracket</h2>
-    <div class="predict-disclaimer">Seeding is by actual win percentage, matching the in-game standings screen - since Legend Bowl doesn't export a true seed number directly, this is a projection, but it's driven by real record, not an estimate. A from-scratch power score (win% plus offense/defense vs. league average) only breaks a genuine tie on win% - we don't know Legend Bowl's real tiebreaker rule, so ties specifically are still a best guess. Round 1 pairing (seed 3v6, 4v5) follows standard convention and is a fixed bracket - confirmed no re-seeding after Round 1.</div>
+    <div id="standings-container"></div>
     <div class="bracket-converge bracket-lb" style="margin-top:14px;">
       <div class="bracket-half bracket-half-left">${leftHtml}</div>
       <div class="bracket-center" style="width:128px;">${superBowlHtml}</div>
       <div class="bracket-half bracket-half-right">${rightHtml}</div>
     </div>
   `;
+  renderStandings(document.getElementById('standings-container'), lastRosterTeams, rankings);
+}
+
+// League standings, grouped by division, matching the in-game standings
+// screen's shape (Team, W, L, PCT, PF, PA, Home, Road, Streak). One
+// conference at a time via a toggle - all 8 divisions on screen together
+// pushes the bracket too far down to see without heavy scrolling.
+function renderStandings(container, rosterTeams, powerRankings) {
+  if (!container) return;
+  const scoreByTid = {};
+  powerRankings.forEach(e => { scoreByTid[e.tid] = e; });
+
+  const byConf = { 0: [], 1: [] };
+  (rosterTeams || []).forEach(t => {
+    if (t.conference == null || t.division == null) return;
+    const conf = Math.round(t.conference);
+    const stats = getLatestTeamStats(t);
+    const wins = Number(stats && stats.stat_wins) || 0;
+    const losses = Number(stats && stats.stat_losses) || 0;
+    const pct = (wins + losses) > 0 ? wins / (wins + losses) : 0;
+    const streakW = Number(stats && stats.stat_winning_streak) || 0;
+    const streakL = Number(stats && stats.stat_losing_streak) || 0;
+    const streak = streakW > 0 ? `W${streakW}` : streakL > 0 ? `L${streakL}` : '-';
+    byConf[conf] = byConf[conf] || [];
+    byConf[conf].push({
+      team: t, division: Math.round(t.division), wins, losses, pct,
+      pf: Number(stats && stats.stat_total_pts) || 0,
+      pa: Number(stats && stats.stat_total_pts_allowed) || 0,
+      home: `${Math.round(Number(stats && stats.stat_home_wins) || 0)}-${Math.round(Number(stats && stats.stat_home_losses) || 0)}`,
+      road: `${Math.round(Number(stats && stats.stat_away_wins) || 0)}-${Math.round(Number(stats && stats.stat_away_losses) || 0)}`,
+      streak,
+    });
+  });
+
+  // Real NFL division alignment (verified earlier against this league's
+  // actual team-to-division mapping) - conference 0 is the AFC side.
+  const confLabel = { 0: 'AFC', 1: 'NFC' };
+
+  const buildDivisionTable = (rows) => {
+    const sorted = [...rows].sort((a, b) => b.pct - a.pct || b.pf - a.pf);
+    return `
+      <div class="dp-group" style="margin-bottom:12px;">
+        <div class="dp-row dp-header">
+          <span class="dp-name">Team</span>
+          <span class="dp-age" style="flex:0 0 30px; text-align:center;">W</span>
+          <span class="dp-age" style="flex:0 0 30px; text-align:center;">L</span>
+          <span class="dp-age" style="flex:0 0 50px; text-align:center;">PCT</span>
+          <span class="dp-age" style="flex:0 0 40px; text-align:center;">PF</span>
+          <span class="dp-age" style="flex:0 0 40px; text-align:center;">PA</span>
+          <span class="dp-age" style="flex:0 0 46px; text-align:center;">Home</span>
+          <span class="dp-age" style="flex:0 0 46px; text-align:center;">Road</span>
+          <span class="dp-age" style="flex:0 0 40px; text-align:center;">Strk</span>
+        </div>
+        ${sorted.map(r => {
+          const brand = singleTeamBranding(r.team.cityabbr);
+          return `<div class="dp-row">
+            <span class="dp-name"><span class="fa-team-bubble" style="background:${brand.primary}; color:${brand.secondary};">${esc(r.team.cityabbr)}</span> ${esc(r.team.city)} ${esc(r.team.name)}</span>
+            <span class="dp-age" style="flex:0 0 30px; text-align:center;">${esc(r.wins)}</span>
+            <span class="dp-age" style="flex:0 0 30px; text-align:center;">${esc(r.losses)}</span>
+            <span class="dp-age" style="flex:0 0 50px; text-align:center;">${esc((r.pct * 100).toFixed(1))}%</span>
+            <span class="dp-age" style="flex:0 0 40px; text-align:center;">${esc(r.pf)}</span>
+            <span class="dp-age" style="flex:0 0 40px; text-align:center;">${esc(r.pa)}</span>
+            <span class="dp-age" style="flex:0 0 46px; text-align:center;">${esc(r.home)}</span>
+            <span class="dp-age" style="flex:0 0 46px; text-align:center;">${esc(r.road)}</span>
+            <span class="dp-age" style="flex:0 0 40px; text-align:center; color:${r.streak.startsWith('W') ? '#39FF6A' : r.streak.startsWith('L') ? '#FF4D4D' : 'var(--muted)'};">${esc(r.streak)}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    `;
+  };
+
+  const renderConference = (conf) => {
+    const teams = byConf[conf] || [];
+    const byDivision = { 0: [], 1: [], 2: [], 3: [] };
+    teams.forEach(t => { byDivision[t.division] = byDivision[t.division] || []; byDivision[t.division].push(t); });
+    return Object.values(byDivision).map(buildDivisionTable).join('');
+  };
+
+  container.innerHTML = `
+    <div class="aa-column-title" style="margin-top:10px;">LEAGUE STANDINGS</div>
+    <div class="card-picker" style="margin: 8px 0 12px;">
+      <button class="load-btn ready" id="standings-conf-0-btn">${esc(confLabel[0])}</button>
+      <button class="load-btn" id="standings-conf-1-btn">${esc(confLabel[1])}</button>
+    </div>
+    <div id="standings-tables">${renderConference(0)}</div>
+  `;
+  document.getElementById('standings-conf-0-btn').addEventListener('click', () => {
+    document.getElementById('standings-tables').innerHTML = renderConference(0);
+    document.getElementById('standings-conf-0-btn').classList.add('ready');
+    document.getElementById('standings-conf-1-btn').classList.remove('ready');
+  });
+  document.getElementById('standings-conf-1-btn').addEventListener('click', () => {
+    document.getElementById('standings-tables').innerHTML = renderConference(1);
+    document.getElementById('standings-conf-1-btn').classList.add('ready');
+    document.getElementById('standings-conf-0-btn').classList.remove('ready');
+  });
 }
 
 function renderPlayoffBracket() {
