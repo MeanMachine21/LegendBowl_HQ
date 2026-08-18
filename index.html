@@ -1136,7 +1136,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v45</div>
+  <div class="name">LB_RECAP v47</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1224,15 +1224,16 @@
       <button class="tab-btn" data-view="injuries">Injuries</button>
       <button class="tab-btn" data-view="teamcard">Starting Lineup</button>
       <button class="tab-btn" data-view="matchupcard">Matchup Card</button>
+      <button class="tab-btn" data-view="powerrankings">Power Rankings</button>
+      <button class="tab-btn" data-view="statleaders">Stat Leaders</button>
       <button class="tab-btn" data-view="bracket">Playoff Bracket</button>
       <button class="tab-btn" data-view="hof">Hall of Fame</button>
-      <button class="tab-btn" data-view="statleaders">Stat Leaders</button>
       <button class="tab-btn" data-view="records">All-Time Records</button>
-      <button class="tab-btn" data-view="powerrankings">Power Rankings</button>
-      <button class="tab-btn" data-view="draftprep">Draft Prep</button>
       <button class="tab-btn" data-view="trademachine">Trade Machine</button>
       <button class="tab-btn" data-view="freeagency">Free Agency <span style="font-size:9px; opacity:0.7;">BETA</span></button>
+      <button class="tab-btn" data-view="draftprep">Draft Prep</button>
       <button class="tab-btn" data-view="coach">Coach's Corner</button>
+      <button class="tab-btn" data-view="schedule">Schedule <span style="font-size:9px; opacity:0.7;">SOON</span></button>
     </div>
 
     <div class="view active" id="view-summary"></div>
@@ -1242,15 +1243,16 @@
     <div class="view" id="view-injuries"></div>
     <div class="view" id="view-teamcard"></div>
     <div class="view" id="view-matchupcard"></div>
+    <div class="view" id="view-powerrankings"></div>
+    <div class="view" id="view-statleaders"></div>
     <div class="view" id="view-bracket"></div>
     <div class="view" id="view-hof"></div>
-    <div class="view" id="view-statleaders"></div>
     <div class="view" id="view-records"></div>
-    <div class="view" id="view-powerrankings"></div>
-    <div class="view" id="view-draftprep"></div>
     <div class="view" id="view-trademachine"></div>
     <div class="view" id="view-freeagency"></div>
+    <div class="view" id="view-draftprep"></div>
     <div class="view" id="view-coach"></div>
+    <div class="view" id="view-schedule"></div>
   </div>
 
 </div>
@@ -1678,7 +1680,9 @@ function relLuminance(hex) {
 function getLatestTeamStats(team) {
   const stats = team.team_stats;
   if (!Array.isArray(stats) || !stats.length) return null;
-  return stats.reduce((latest, s) => (latest == null || (s.year ?? -1) > (latest.year ?? -1)) ? s : latest, null);
+  const withGames = stats.filter(s => (Number(s.stat_games) || 0) > 0);
+  const pool = withGames.length ? withGames : stats;
+  return pool.reduce((latest, s) => (latest == null || (s.year ?? -1) > (latest.year ?? -1)) ? s : latest, null);
 }
 
 // --- Trade Machine swap engine ---
@@ -3113,10 +3117,18 @@ function computeLegendBowlPowerRankings(rosterTeams) {
 }
 
 // Legend Bowl seeding: 4 division winners per conference (seeds 1-4, best
-// power score wins each division), plus the best 2 non-division-winners
-// per conference as wild cards (seeds 5-6). The top 2 seeds in each
-// conference - always division winners, since they're seeded 1-4 - get
-// the bye to Round 2.
+// ACTUAL win-loss record wins each division), plus the best 2 non-
+// division-winners per conference as wild cards (seeds 5-6). Seeding is
+// real win% first, full stop - it does NOT blend in the offense/defense
+// power score the way an earlier version did, which was a real bug: a
+// team with a worse actual record (e.g. 10-6) could out-rank a team with
+// a clearly better one (e.g. 11-5) purely because of a large point
+// differential, which doesn't reflect how any real standings work and
+// doesn't match what the in-game standings screen shows. The power score
+// is only used as a last-resort tiebreaker for teams tied on win% - we
+// don't know Legend Bowl's real tiebreaker rule (head-to-head, division
+// record, etc.), so ties are a genuine estimate, but a clear win% gap
+// never is.
 function computeLegendBowlSeeding(rosterTeams, powerRankings) {
   const byConference = {};
   powerRankings.forEach(entry => {
@@ -3126,6 +3138,10 @@ function computeLegendBowlSeeding(rosterTeams, powerRankings) {
     if (!byConference[conf]) byConference[conf] = [];
     byConference[conf].push({ ...entry, division: Math.round(team.division) });
   });
+
+  // Real win% first; power score only breaks an exact tie (a genuine
+  // estimate, since we don't know Legend Bowl's actual tiebreaker rule).
+  const byRecord = (a, b) => (b.winPct - a.winPct) || (b.powerScore - a.powerScore);
 
   const seeding = {};
   Object.keys(byConference).forEach(confKey => {
@@ -3139,12 +3155,12 @@ function computeLegendBowlSeeding(rosterTeams, powerRankings) {
     });
 
     const divisionWinners = Object.values(byDivision)
-      .map(divTeams => divTeams.slice().sort((a, b) => b.powerScore - a.powerScore)[0])
-      .sort((a, b) => b.powerScore - a.powerScore);
+      .map(divTeams => divTeams.slice().sort(byRecord)[0])
+      .sort(byRecord);
 
     const divisionWinnerTids = new Set(divisionWinners.map(t => t.tid));
     const wildCards = teams.filter(t => !divisionWinnerTids.has(t.tid))
-      .sort((a, b) => b.powerScore - a.powerScore)
+      .sort(byRecord)
       .slice(0, 2);
 
     const seeds = [...divisionWinners, ...wildCards].map((t, i) => ({ ...t, seed: i + 1, isDivisionWinner: i < divisionWinners.length }));
@@ -4613,6 +4629,7 @@ function tryBuild() {
   renderTradeMachine();
   renderDraftPrepPicker();
   renderFreeAgency();
+  renderSchedule();
 
   const newLoadedGames = [];
   pairs.forEach(pair => {
@@ -4677,6 +4694,7 @@ function tryBuild() {
   renderTradeMachine();
   renderDraftPrepPicker();
   renderFreeAgency();
+  renderSchedule();
 }
 
 function renderActiveGame() {
@@ -4743,6 +4761,7 @@ function removeGame(idx) {
   renderTradeMachine();
   renderDraftPrepPicker();
   renderFreeAgency();
+  renderSchedule();
     return;
   }
   if (activeGameIndex === idx) activeGameIndex = Math.min(idx, loadedGames.length - 1);
@@ -4758,6 +4777,7 @@ function removeGame(idx) {
   renderTradeMachine();
   renderDraftPrepPicker();
   renderFreeAgency();
+  renderSchedule();
 }
 
 document.addEventListener('click', (e) => {
@@ -5723,7 +5743,7 @@ function renderLegendBowlBracket(container) {
 
   container.innerHTML = `
     <h2 class="section-title">Playoff Bracket</h2>
-    <div class="predict-disclaimer">Seeding is projected from a from-scratch power ranking (win% plus offense/defense vs. league average), since Legend Bowl has no in-game true rank. Round 1 pairing (seed 3v6, 4v5) follows standard convention and is a fixed bracket - confirmed no re-seeding after Round 1.</div>
+    <div class="predict-disclaimer">Seeding is by actual win percentage, matching the in-game standings screen - since Legend Bowl doesn't export a true seed number directly, this is a projection, but it's driven by real record, not an estimate. A from-scratch power score (win% plus offense/defense vs. league average) only breaks a genuine tie on win% - we don't know Legend Bowl's real tiebreaker rule, so ties specifically are still a best guess. Round 1 pairing (seed 3v6, 4v5) follows standard convention and is a fixed bracket - confirmed no re-seeding after Round 1.</div>
     <div class="bracket-converge bracket-lb" style="margin-top:14px;">
       <div class="bracket-half bracket-half-left">${leftHtml}</div>
       <div class="bracket-center" style="width:128px;">${superBowlHtml}</div>
@@ -6338,6 +6358,34 @@ function styleFreeAgencySelect(cityabbr) {
   sel.style.borderColor = brand.secondary;
 }
 
+// The same source Coach's Corner uses to identify "your" team - reused
+// here so Free Agency can be locked to the one team you actually coach,
+// instead of letting the team-picker control any of the other 31.
+// Placeholder while the full NFL-style schedule generator is being built
+// (division rivals + rotating in-conference/cross-conference divisions +
+// standings-based games, all derived from the draft-order signal - the
+// pairing algorithm itself is validated, week-by-week assignment and the
+// actual export/preview UI are still in progress).
+function renderSchedule() {
+  const container = document.getElementById('view-schedule');
+  if (!container || !lastRosterTeams) return;
+  container.innerHTML = `
+    <h2 class="section-title">Schedule Builder <span style="font-size:12px; color:var(--muted); font-weight:400;">(coming soon)</span></h2>
+    <div class="predict-disclaimer">Generates a full NFL-style regular season schedule for the upcoming year: division rivals home-and-away, rotating in-conference and cross-conference divisional matchups (derived purely from the year number, so it's always reproducible), and the remaining games matched by how each team finished last season. You'll be able to preview the whole thing here before downloading anything. Still under construction.</div>
+  `;
+}
+
+function getMyCoachedTeam() {
+  const stints = mergeCareerDataFiles(pendingCareerDataFiles);
+  if (!stints.length) return null;
+  return stints.reduce((latest, s) => {
+    if (!latest) return s;
+    if (s.year > latest.year) return s;
+    if (s.year === latest.year && s.week > latest.week) return s;
+    return latest;
+  }, null);
+}
+
 function renderFreeAgency() {
   const container = document.getElementById('view-freeagency');
   if (!container || !lastRosterTeams) return;
@@ -6362,7 +6410,9 @@ function renderFreeAgency() {
   if (scoutingOnly) faSimState = null; // no active simulation can exist outside the real off-season window
 
   const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
-  const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('');
+  const myCoachedTeam = getMyCoachedTeam();
+  const lockedTeam = myCoachedTeam ? lastRosterTeams.find(t => Math.round(t.tid) === myCoachedTeam.tid) : null;
+
   const bannerHtml = scoutingOnly
     ? `<div class="predict-disclaimer" style="border-left-color:#FF9F40;">
         <strong style="color:#FF9F40;">Regular season - preview only.</strong> You can browse who's about to hit free agency and start strategizing, but making real offers only unlocks once you reach the off-season (every game, including the full playoffs, actually played).
@@ -6371,9 +6421,35 @@ function renderFreeAgency() {
         <strong style="color:#FFC93C;">Timing matters:</strong> enter this tab AFTER the in-game Free Agency step has already run for this offseason, but BEFORE you hit Progression - that's the one window where this tool's view of your roster actually matches the game's. This is a house-rule simulation layered on top of your save - it does NOT read or write any real Legend Bowl mechanic on its own, and nothing here changes your actual save file until you explicitly download an export. The signing cap is computed from your league's real payroll numbers; the asking-price and interest estimates use real soft-trait fields (greed, loyalty, work ethic) but the dollar weights and AI team logic are a first-draft heuristic, not something the save file can confirm. Press "Start Simulation" below to run a full 5-round cycle with AI-controlled other teams.
       </div>`;
 
+  if (lockedTeam) {
+    // Locked to your actual coached team - no picker, no way to run
+    // Free Agency for any other team in the league. Minimizes the risk
+    // of accidentally simulating (and potentially exporting) changes for
+    // a team that isn't yours.
+    const brand = singleTeamBranding(lockedTeam.cityabbr);
+    container.innerHTML = `
+      <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
+      ${bannerHtml}
+      <div class="fa-col-banner" style="background:${brand.primary}; color:${brand.secondary}; margin-top:14px; font-size:18px; padding:10px 16px;">
+        Playing as ${esc(lockedTeam.city)} ${esc(lockedTeam.name)} <span style="font-size:11px; opacity:0.8; font-weight:400;">(from career_data.txt)</span>
+      </div>
+      <div id="fa-result"></div>
+    `;
+    renderFreeAgencyResult(lockedTeam.cityabbr);
+    return;
+  }
+
+  // No career_data.txt loaded - we genuinely don't know which team is
+  // yours, so fall back to letting you pick, with a clear nudge to fix
+  // that rather than silently trusting whatever gets selected.
+  const options = teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('');
+
   container.innerHTML = `
     <h2 class="section-title">Free Agency <span style="font-size:12px; color:var(--muted); font-weight:400;">(prototype)</span></h2>
     ${bannerHtml}
+    <div class="predict-disclaimer" style="border-left-color:#FF9F40;">
+      <strong style="color:#FF9F40;">No career_data.txt loaded.</strong> This tool can't tell which team is actually yours, so the picker below lets you choose - upload career_data.txt alongside your other files to lock this to your real coached team automatically and remove the risk of accidentally running Free Agency for the wrong one.
+    </div>
     <div class="card-picker" style="margin-top:14px;">
       <select id="fa-team-select">${options}</select>
       <button class="load-btn ready" id="fa-team-build-btn">${scoutingOnly ? 'PREVIEW' : 'SHOW MY CAP'}</button>
