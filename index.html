@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v51</div>
+  <div class="name">LB_RECAP v52</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -6808,11 +6808,24 @@ function renderSchedulePreview(cityabbr, year) {
 
 // Matches the game's own schedule.txt format exactly: tab-separated,
 // CRLF line endings, columns year/week/away_team/home_team/away_score/
-// home_score, with -1/-1 for a game that hasn't been played yet.
+// home_score, with -1/-1 for a regular-season game that hasn't been
+// played yet. The real export ALSO always includes placeholder rows for
+// the playoffs (weeks 18-21: 4 wildcard, 4 divisional, 2 conference
+// championship, 1 Super Bowl) with BOTH teams AND scores at -1, since
+// the participants aren't determined until the regular season plays out
+// - confirmed directly against a real save's schedule.txt. Omitting
+// these was a real gap: the regular-season-only export didn't match
+// what the game itself actually writes for a fresh season.
 function buildScheduleTxtExport(schedule, year) {
   const lines = ['year\tweek\taway_team\thome_team\taway_score\thome_score'];
   schedule.forEach(g => {
     lines.push(`${year}\t${g.week}\t${Math.round(g.away.tid)}\t${Math.round(g.home.tid)}\t-1\t-1`);
+  });
+  const playoffRoundGameCounts = [[18, 4], [19, 4], [20, 2], [21, 1]]; // wildcard, divisional, conf champ, Super Bowl
+  playoffRoundGameCounts.forEach(([week, count]) => {
+    for (let i = 0; i < count; i++) {
+      lines.push(`${year}\t${week}\t-1\t-1\t-1\t-1`);
+    }
   });
   return lines.join('\r\n');
 }
