@@ -675,13 +675,14 @@
   .fa-name-threatened { background: rgba(255, 159, 64, 0.32); border-radius: 3px; padding: 1px 4px; margin: -1px -4px; font-weight: 700; animation: fa-threat-pulse 1.6s ease-in-out infinite; }
   @keyframes fa-threat-pulse { 0%, 100% { background: rgba(255, 159, 64, 0.32); } 50% { background: rgba(255, 159, 64, 0.55); } }
 
-  .fa-row-actions { flex: 0 0 74px; display: flex; gap: 3px; }
-  .fa-quick-min, .fa-quick-cut {
+  .fa-row-actions { flex: 0 0 108px; display: flex; gap: 3px; }
+  .fa-quick-min, .fa-quick-cut, .fa-quick-cutnow {
     font-family: 'IBM Plex Mono', monospace; font-size: 10px; padding: 2px 5px; border-radius: 3px;
     border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; flex: 1 1 auto; text-align: center;
   }
   .fa-quick-min:hover { color: #39FF6A; border-color: #39FF6A; }
   .fa-quick-cut:hover, .fa-quick-cut.active { color: #FF4D4D; border-color: #FF4D4D; }
+  .fa-quick-cutnow:hover { color: #FF3D71; border-color: #FF3D71; background: rgba(255,61,113,0.12); }
   .fa-quick-cut.active { background: rgba(255,77,77,0.15); }
   .fa-cut-undo {
     background: none; border: 1px solid var(--line); color: var(--muted); border-radius: 3px;
@@ -691,7 +692,7 @@
   .fa-notes-icons { flex: 0 0 56px; text-align: center; font-size: 15px; letter-spacing: 1px; }
   .fa-team-bubble {
     display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
-    padding: 2px 6px; border-radius: 10px; line-height: 1.3;
+    padding: 2px 6px; border-radius: 10px; line-height: 1.3; min-width: 30px; text-align: center;
   }
   .fa-trait-row { display: flex; justify-content: space-between; align-items: baseline; font-family: 'IBM Plex Mono', monospace; font-size: 12px; margin-top: 6px; }
   .fa-trait-name { color: var(--chalk); text-transform: uppercase; letter-spacing: 0.5px; }
@@ -1136,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v47</div>
+  <div class="name">LB_RECAP v49</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1233,7 +1234,7 @@
       <button class="tab-btn" data-view="freeagency">Free Agency <span style="font-size:9px; opacity:0.7;">BETA</span></button>
       <button class="tab-btn" data-view="draftprep">Draft Prep</button>
       <button class="tab-btn" data-view="coach">Coach's Corner</button>
-      <button class="tab-btn" data-view="schedule">Schedule <span style="font-size:9px; opacity:0.7;">SOON</span></button>
+      <button class="tab-btn" data-view="schedule">Schedule <span style="font-size:9px; opacity:0.7;">BETA</span></button>
     </div>
 
     <div class="view active" id="view-summary"></div>
@@ -2019,7 +2020,7 @@ function buildFreeAgencyExport(state) {
     if (!signing.giveBack) {
       // Same-team re-sign - no roster move, just a contract update at
       // wherever this player's data currently lives.
-      if (!signing.isCutReplacement && !signing.isUnresolvedDeparture) {
+      if (!signing.isCutReplacement && !signing.isUnresolvedDeparture && !signing.isImmediateCut) {
         newRosterText = updatePlayerContractInRosterText(newRosterText, slotFor(signedNativePid), signing.salary, signing.years);
       }
       return;
@@ -2044,7 +2045,7 @@ function buildFreeAgencyExport(state) {
 
     // A cut-replacement/unresolved-departure is a pure trade - no new
     // contract, matching how a real trade keeps the existing deal.
-    if (!signing.isCutReplacement && !signing.isUnresolvedDeparture) {
+    if (!signing.isCutReplacement && !signing.isUnresolvedDeparture && !signing.isImmediateCut) {
       newRosterText = updatePlayerContractInRosterText(newRosterText, slotB, signing.salary, signing.years);
     }
   });
@@ -2072,12 +2073,23 @@ const STAT_LEADER_CATEGORIES = [
   { label: 'Kick Return Yards', field: 'stat_kick_return_yards' },
 ];
 
+// Broad check across common stat categories - true if ANY of them has a
+// real recorded value. stat_games isn't a reliable signal at the player
+// level (confirmed null on both real and empty player_stats entries), so
+// this checks the actual stat fields instead.
+function hasRealPlayerStats(ps) {
+  const fields = ['stat_pass_yards', 'stat_pass_tds', 'stat_pass_attempts', 'stat_rush_yards', 'stat_rush_tds',
+    'stat_receiving_yards', 'stat_receiving_tds', 'stat_defense_tackles', 'stat_defense_sacks', 'stat_defense_int',
+    'stat_punt_gross_yards', 'stat_kick_pts', 'stat_punt_return_yards', 'stat_kick_return_yards'];
+  return fields.some(f => (Number(ps[f]) || 0) > 0);
+}
+
 function getLatestPlayerStatsYear(rosterTeams) {
   let maxYear = null;
   (rosterTeams || []).forEach(team => {
     (team.player || []).forEach(p => {
       (p.player_stats || []).forEach(ps => {
-        if (ps.year != null && (maxYear == null || ps.year > maxYear)) maxYear = ps.year;
+        if (ps.year != null && hasRealPlayerStats(ps) && (maxYear == null || ps.year > maxYear)) maxYear = ps.year;
       });
     });
   });
@@ -2448,6 +2460,7 @@ function estimateFreeAgentAsk(player, rosterTeams) {
   const greed = player.pers_greed ?? 50;
   const loyalty = player.pers_loyalty ?? 50;
   const workEthic = player.pers_work_ethic ?? 50;
+  const popularity = player.pers_popularity ?? 50;
   const posRank = computePlayerPositionRank(rosterTeams, player.position, player.skill || 0);
   const isTopTier = posRank.rank <= 10;
 
@@ -2455,10 +2468,21 @@ function estimateFreeAgentAsk(player, rosterTeams) {
   const topTierBump = isTopTier ? 1 + (greed / 100) * 0.5 : 1.0; // elite + greedy players ask WAY more
   const teamFriendly = loyalty >= 65 && greed <= 40 && workEthic >= 65;
   const teamFriendlyDiscount = teamFriendly ? 0.85 : 1.0;
+  // Popularity - star power beyond pure skill. A well-known player can
+  // command a bit more just for who they are; a low-profile one has less
+  // leverage to push their price up. Deliberately modest (0.95x-1.10x) -
+  // this is a small premium on top of the real driver (skill/greed), not
+  // a replacement for it.
+  const popularityFactor = 0.95 + (popularity / 100) * 0.15;
 
   const baseSalary = Number(player.salary) || 1;
-  const askSalary = baseSalary * greedFactor * topTierBump * teamFriendlyDiscount;
-  const askYears = Math.max(1, Math.min(5, 1 + Math.round((loyalty / 100) * 4)));
+  const askSalary = baseSalary * greedFactor * topTierBump * teamFriendlyDiscount * popularityFactor;
+  // Work Ethic pulls independently toward a SHORTER ask, on top of
+  // whatever loyalty wants - a player who's confident in their own grind
+  // is more willing to bet on themselves with a prove-it deal, even if
+  // loyalty alone would've asked for more term.
+  const rawYears = 1 + (loyalty / 100) * 4 - (workEthic / 100) * 1;
+  const askYears = Math.max(1, Math.min(5, Math.round(rawYears)));
 
   return { askSalary, askYears, isTopTier, posRank, teamFriendly };
 }
@@ -2471,6 +2495,13 @@ function computeInterestScore(player, currentTeam, targetTeam) {
   const greed = (player.pers_greed ?? 50) / 100;
   const loyalty = (player.pers_loyalty ?? 50) / 100;
   const winner = (player.pers_winner ?? 50) / 100;
+  const iq = (player.pers_iq ?? 50) / 100;
+  // How much weight the objectively-rational factors (team quality, roster
+  // strength) get, scaled by IQ - a sharper player reads the situation
+  // more accurately and weighs it more; a less cerebral one is driven
+  // relatively more by raw emotion (greed/loyalty, which aren't scaled by
+  // this and stay constant either way).
+  const rationalWeight = 0.6 + iq * 0.8; // 0.6x - 1.4x
 
   // A high-Winner player reads a roster's Elite (top-10-at-position)
   // headcount as "is this team built to win now" - above the league
@@ -2478,7 +2509,7 @@ function computeInterestScore(player, currentTeam, targetTeam) {
   // average pushes them away. Scaled by how much winning matters to this
   // specific player, so a low-Winner player barely notices either way.
   const eliteDelta = faCountEliteOnRoster(targetTeam) - faLeagueAvgEliteCount();
-  const winnerAdj = winner * (eliteDelta / 10) * 0.3;
+  const winnerAdj = winner * (eliteDelta / 10) * 0.3 * rationalWeight;
 
   // Re-signing with your OWN team is a different question than "would you
   // leave for a different one." Loyalty should make staying EASIER here,
@@ -2503,7 +2534,7 @@ function computeInterestScore(player, currentTeam, targetTeam) {
   let openness = 0.5
     + greed * 0.3          // greedy players are generically more open to a better-money situation
     - loyalty * 0.25        // loyal players resist leaving regardless of situation
-    + situationDelta * 0.4 * (1 - loyalty * 0.5) // a clearly better situation helps, tempered for loyal players
+    + situationDelta * 0.4 * (1 - loyalty * 0.5) * rationalWeight // a clearly better situation helps, tempered for loyal players, weighted by IQ
     + winnerAdj;
   openness = Math.max(0, Math.min(1, openness));
 
@@ -2642,6 +2673,35 @@ function faToggleCut(pid, state) {
     state.cutPids.add(pid);
     delete state.userOffers[pid];
   }
+}
+
+// Cuts a player RIGHT NOW instead of marking "moving on" and waiting for
+// round 5 - same swap-for-a-replacement mechanism (a roster slot always
+// needs something in it, so there's no such thing as cutting someone with
+// zero compensation), just resolved immediately instead of deferred. The
+// tradeoff vs. "moving on": waiting gives a real AI team's own need-based
+// logic a chance to pick them up naturally (which can occasionally hand
+// back a slightly better swap partner, since it's a real need-match, not
+// a random pick) - cutting now skips that chance entirely in exchange for
+// instant cap relief and an immediate salary-rank improvement.
+function faExecuteImmediateCut(entry, myTeam, state) {
+  const pid = entry.pid;
+  delete state.userOffers[pid];
+  state.cutPids.delete(pid);
+  delete state.competingOffers[pid];
+  const otherTeams = lastRosterTeams.filter(t => t.cityabbr !== myTeam.cityabbr);
+  const receivingTeam = otherTeams[Math.floor(Math.random() * otherTeams.length)];
+  const giveBack = faExecuteSwap(entry.player, myTeam, receivingTeam, state);
+  state.signings.push({
+    pid, player: entry.player, fromTeam: myTeam, toTeam: receivingTeam,
+    salary: 0, years: 0, round: state.round, wasUser: false, giveBack, isImmediateCut: true,
+  });
+  // Unlike a real signing, this doesn't put them under a fresh multi-year
+  // deal - their actual contract status never changed, only their team
+  // did. So they stay in the pool (now under their new team) instead of
+  // being removed - still a legitimate UFA someone (including you, later,
+  // if your cap situation improves) could still sign.
+  entry.originalTeam = receivingTeam;
 }
 
 let faSimState = null; // null = simulation not started
@@ -6184,9 +6244,21 @@ function renderStatLeaders() {
   const defenseCats = STAT_LEADER_CATEGORIES.slice(6, 9);
   const stCats = STAT_LEADER_CATEGORIES.slice(9, 11);
 
+  const categoryOptions = STAT_LEADER_CATEGORIES.map(cat =>
+    `<option value="${esc(cat.field)}">${esc(cat.label)}</option>`
+  ).join('');
+
   container.innerHTML = `
     <h2 class="section-title">Stat Leaders</h2>
     <p class="empty-note" style="text-align:left; margin-bottom:16px;">Season ${esc(year)} leaders leaguewide. \u{1F3C6} marks a player with at least one award recorded in your uploaded Hall of Fame file (any season, not just this one).</p>
+
+    <div class="aa-column-title">DEEP DIVE - TOP 15 BY CATEGORY</div>
+    <div class="card-picker" style="margin: 8px 0 12px;">
+      <select id="statleaders-category-select">${categoryOptions}</select>
+    </div>
+    <div id="statleaders-deepdive"></div>
+
+    <div class="aa-column-title" style="margin-top:20px;">AT A GLANCE</div>
     <div class="aa-columns">
       <div class="aa-column">
         <div class="aa-column-title">OFFENSE / RETURNS</div>
@@ -6200,6 +6272,34 @@ function renderStatLeaders() {
       </div>
     </div>
   `;
+
+  function renderDeepDive(field) {
+    const cat = STAT_LEADER_CATEGORIES.find(c => c.field === field);
+    const rows = (leaders[field] || []).slice(0, 15);
+    const deepDiveEl = document.getElementById('statleaders-deepdive');
+    if (!deepDiveEl) return;
+    deepDiveEl.innerHTML = `
+      <div class="dp-group">
+        <div class="dp-row dp-header">
+          <span class="dp-pos">Pos</span><span class="dp-name">Name</span><span class="dp-age" style="flex:0 0 40px;">Team</span><span class="dp-stat" style="flex:0 0 80px; text-align:right;">${esc(cat ? cat.label : '')}</span>
+        </div>
+        ${rows.length ? rows.map((entry, i) => {
+          const hofCount = hofAwardCountByPid[entry.pid] || 0;
+          const brand = singleTeamBranding(entry.cityabbr);
+          return `<div class="dp-row">
+            <span class="dp-pos" style="flex:0 0 26px;">${esc(i + 1)}</span>
+            <span class="dp-name">${esc(entry.position)} ${esc(`${entry.fname} ${entry.lname}`.trim())}${hofCount > 0 ? ` <span class="hof-trophy-badge">${'\u{1F3C6}'.repeat(hofCount)}</span>` : ''}</span>
+            <span class="dp-age" style="flex:0 0 40px;"><span class="fa-team-bubble" style="background:${brand.primary}; color:${brand.secondary};">${esc(entry.cityabbr)}</span></span>
+            <span class="dp-stat" style="flex:0 0 80px; text-align:right;">${esc(entry.value)}</span>
+          </div>`;
+        }).join('') : '<div class="empty-note" style="padding:10px;">No data for this category.</div>'}
+      </div>
+    `;
+  }
+
+  const selectEl = document.getElementById('statleaders-category-select');
+  selectEl.addEventListener('change', () => renderDeepDive(selectEl.value));
+  renderDeepDive(selectEl.value);
 }
 
 function renderHallOfFame() {
@@ -6366,13 +6466,337 @@ function styleFreeAgencySelect(cityabbr) {
 // standings-based games, all derived from the draft-order signal - the
 // pairing algorithm itself is validated, week-by-week assignment and the
 // actual export/preview UI are still in progress).
+// ============================================================
+// SCHEDULE BUILDER
+// ============================================================
+// Full NFL-style regular season generator. Every team: 6 division games
+// (home+away vs each rival), 4 in-conference rotation games (one other
+// division in your conference, rotating on a 3-year cycle), 4 cross-
+// conference rotation games (one division from the other conference,
+// rotating on a 4-year cycle), and 2 standings-based games (same
+// divisional finish, against the two conference divisions not otherwise
+// scheduled). All four rotation/matching indices are derived purely from
+// (year - 1) via modulo, so the same year always produces the same
+// schedule regardless of how many times this has been run before -
+// there's no hidden "how many times has this tool been used" state.
+//
+// The hard part turned out to be week assignment, not the matchups
+// themselves. With 32 teams needing exactly 1 bye each across 17 weeks,
+// the total game capacity is mathematically fixed at exactly 256 games -
+// zero slack, no matter how byes are distributed. True random-greedy and
+// even backtracking search struggled badly at that tightness (confirmed
+// directly: greedy stalled around 55-65% placed, backtracking either
+// timed out or failed outright even with 200,000+ attempts). The
+// reliable fix: decompose the 256 games into 16 GLOBALLY conflict-free
+// "rounds" (division round-robin pairs, K4,4 rotation matchings, and the
+// standings 4-cycles all naturally split into rounds where every team
+// appears at most once) and give the whole league ONE shared bye week
+// instead of staggering 32 individual ones. That's a deliberate
+// simplification, not an oversight - true per-team staggered byes turned
+// the problem back into the same razor-tight relocation puzzle. This
+// version is 100% reliable, fully deterministic, and runs instantly.
+
+const SCHEDULE_IN_CONF_ROUNDS = [
+  { 0: 1, 1: 0, 2: 3, 3: 2 },
+  { 0: 2, 2: 0, 1: 3, 3: 1 },
+  { 0: 3, 3: 0, 1: 2, 2: 1 },
+];
+
+function scheduleCrossConfPartner(divA, offset) {
+  return (divA + offset) % 4;
+}
+
+// Groups every team by (conference, division), and ranks each team 1-4
+// within its own division using the draft-order signal (validated last
+// session: draft order correlates almost perfectly with reverse win-loss
+// record - lower draft number picks earlier, meaning a worse finish).
+function scheduleGroupTeams(rosterTeams) {
+  const groups = {}; // "conf-div" -> [team, ...]
+  (rosterTeams || []).forEach(t => {
+    if (t.conference == null || t.division == null) return;
+    const key = `${Math.round(t.conference)}-${Math.round(t.division)}`;
+    if (!groups[key]) groups[key] = [];
+    groups[key].push(t);
+  });
+  const divPlacement = {}; // tid -> 1 (best) .. 4 (worst) within their own division
+  Object.values(groups).forEach(divTeams => {
+    const ranked = [...divTeams].sort((a, b) => (b.draft ?? -1) - (a.draft ?? -1));
+    ranked.forEach((t, i) => { divPlacement[Math.round(t.tid)] = i + 1; });
+  });
+  return { groups, divPlacement };
+}
+
+// Builds the 16 globally conflict-free "rounds" for one season - each
+// round is a list of {home, away} games (team objects) where every team
+// appears at most once, so any round can be assigned to a single shared
+// week with zero risk of double-booking.
+function buildScheduleRounds(rosterTeams, year) {
+  const { groups, divPlacement } = scheduleGroupTeams(rosterTeams);
+  const cycleOffset = year - 1;
+  const inConfRound = SCHEDULE_IN_CONF_ROUNDS[((cycleOffset % 3) + 3) % 3];
+  const crossConfOffset = ((cycleOffset % 4) + 4) % 4;
+
+  // 6 rounds: double round-robin for each 4-team division. Each round has
+  // TWO simultaneous games (4 teams = 2 pairs per round) - first 3 rounds
+  // one direction, next 3 the same pairings with home/away reversed,
+  // matching the "each rival home + away" division rule.
+  const divisionRounds = [[], [], [], [], [], []];
+  Object.values(groups).forEach(divTeams => {
+    if (divTeams.length !== 4) return; // guard - every real division should have exactly 4
+    const [a, b, c, d] = divTeams;
+    const legOneRounds = [
+      [[a, b], [c, d]],
+      [[a, c], [b, d]],
+      [[a, d], [b, c]],
+    ];
+    legOneRounds.forEach((roundPairs, i) => {
+      roundPairs.forEach(pair => divisionRounds[i].push({ home: pair[0], away: pair[1] }));
+    });
+    legOneRounds.forEach((roundPairs, i) => {
+      roundPairs.forEach(pair => divisionRounds[i + 3].push({ home: pair[1], away: pair[0] }));
+    });
+  });
+
+  const inConfRounds = [[], [], [], []]; // K4,4 decomposed into 4 perfect matchings
+  const seenInConf = new Set();
+  [0, 1].forEach(conf => {
+    for (let div = 0; div < 4; div++) {
+      const pd = inConfRound[div];
+      const key = [conf + '-' + Math.min(div, pd), conf + '-' + Math.max(div, pd)].join('|');
+      if (seenInConf.has(key)) continue;
+      seenInConf.add(key);
+      const A = groups[`${conf}-${div}`], B = groups[`${conf}-${pd}`];
+      if (!A || !B || A.length !== 4 || B.length !== 4) continue;
+      for (let shift = 0; shift < 4; shift++) {
+        for (let i = 0; i < 4; i++) {
+          const a = A[i], b = B[(i + shift) % 4];
+          if (shift < 2) inConfRounds[shift].push({ home: a, away: b });
+          else inConfRounds[shift].push({ home: b, away: a });
+        }
+      }
+    }
+  });
+
+  const crossConfRounds = [[], [], [], []];
+  const seenCross = new Set();
+  for (let div = 0; div < 4; div++) {
+    const pd = scheduleCrossConfPartner(div, crossConfOffset);
+    const key = div + '-' + pd;
+    if (seenCross.has(key)) continue;
+    seenCross.add(key);
+    const A = groups[`0-${div}`], B = groups[`1-${pd}`];
+    if (!A || !B || A.length !== 4 || B.length !== 4) continue;
+    for (let shift = 0; shift < 4; shift++) {
+      for (let i = 0; i < 4; i++) {
+        const a = A[i], b = B[(i + shift) % 4];
+        if (shift < 2) crossConfRounds[shift].push({ home: a, away: b });
+        else crossConfRounds[shift].push({ home: b, away: a });
+      }
+    }
+  }
+
+  // Standings games: same divisional placement, against the two same-
+  // conference divisions not otherwise scheduled this year. These form
+  // disjoint 4-team cycles - 2-colorable (alternate edges) with a
+  // consistent cycle orientation so every team gets exactly 1 home + 1
+  // away, not 2-0 or 0-2 (the naive "alternate by edge index" version of
+  // this was tried and rejected earlier this session for exactly that
+  // imbalance bug).
+  const standingsPairs = new Map(); // "tidA|tidB" (sorted) -> [teamA, teamB]
+  [0, 1].forEach(conf => {
+    for (let div = 0; div < 4; div++) {
+      const scheduled = new Set([div, inConfRound[div]]);
+      const remaining = [0, 1, 2, 3].filter(d => !scheduled.has(d));
+      remaining.forEach(rdiv => {
+        const aTeams = groups[`${conf}-${div}`], bTeams = groups[`${conf}-${rdiv}`];
+        if (!aTeams || !bTeams) return;
+        aTeams.forEach(t => {
+          const place = divPlacement[Math.round(t.tid)];
+          const opp = bTeams.find(o => divPlacement[Math.round(o.tid)] === place);
+          if (!opp) return;
+          const tidA = Math.round(t.tid), tidB = Math.round(opp.tid);
+          const key = tidA < tidB ? `${tidA}|${tidB}` : `${tidB}|${tidA}`;
+          if (!standingsPairs.has(key)) standingsPairs.set(key, [t, opp]);
+        });
+      });
+    }
+  });
+  const adj = new Map(); // tid -> [{team, tid}, ...]
+  standingsPairs.forEach(([a, b]) => {
+    const ta = Math.round(a.tid), tb = Math.round(b.tid);
+    if (!adj.has(ta)) adj.set(ta, []);
+    if (!adj.has(tb)) adj.set(tb, []);
+    adj.get(ta).push({ team: b, tid: tb });
+    adj.get(tb).push({ team: a, tid: ta });
+  });
+  const tidToTeam = {};
+  (rosterTeams || []).forEach(t => { tidToTeam[Math.round(t.tid)] = t; });
+  const standingsRounds = [[], []];
+  const visitedEdges = new Set();
+  adj.forEach((_, start) => {
+    const startNeighbors = adj.get(start) || [];
+    const alreadyVisited = startNeighbors.some(n => visitedEdges.has(`${start}-${n.tid}`) || visitedEdges.has(`${n.tid}-${start}`));
+    if (alreadyVisited) return;
+    const path = [start];
+    let prev = null, cur = start;
+    while (true) {
+      const neighbors = (adj.get(cur) || []).filter(n => n.tid !== prev);
+      const nxt = neighbors[0];
+      if (!nxt) break;
+      visitedEdges.add(`${cur}-${nxt.tid}`);
+      if (nxt.tid === start) break;
+      path.push(nxt.tid);
+      prev = cur; cur = nxt.tid;
+    }
+    for (let i = 0; i < path.length; i++) {
+      const aTid = path[i], bTid = path[(i + 1) % path.length];
+      standingsRounds[i % 2].push({ home: tidToTeam[aTid], away: tidToTeam[bTid] });
+    }
+  });
+
+  return [...divisionRounds, ...inConfRounds, ...crossConfRounds, ...standingsRounds]; // 16 rounds total
+}
+
+// Assigns the 16 rounds to 16 of the 17 weeks (skipping the shared bye
+// week), flattening into a single game list with week numbers attached.
+function buildFullSchedule(rosterTeams, year, byeWeek) {
+  const rounds = buildScheduleRounds(rosterTeams, year);
+  const weeksAvailable = [];
+  for (let w = 1; w <= 17; w++) if (w !== byeWeek) weeksAvailable.push(w);
+  const schedule = [];
+  rounds.forEach((roundGames, i) => {
+    const week = weeksAvailable[i];
+    roundGames.forEach(g => schedule.push({ home: g.home, away: g.away, week }));
+  });
+  return schedule;
+}
+
 function renderSchedule() {
   const container = document.getElementById('view-schedule');
   if (!container || !lastRosterTeams) return;
+
+  const currentYear = getCurrentYear(lastScheduleRows) || 1;
+  const targetYear = currentYear + 1;
+  // Bye week varies a little by year (still always after week 4, matching
+  // real NFL convention) so it's not the exact same week forever, while
+  // staying fully deterministic from the year number alone.
+  const byeWeek = 9 + ((targetYear - 1) % 5);
+
+  const myCoachedTeam = getMyCoachedTeam();
+  const lockedTeam = myCoachedTeam ? lastRosterTeams.find(t => Math.round(t.tid) === myCoachedTeam.tid) : null;
+  const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
+
   container.innerHTML = `
-    <h2 class="section-title">Schedule Builder <span style="font-size:12px; color:var(--muted); font-weight:400;">(coming soon)</span></h2>
-    <div class="predict-disclaimer">Generates a full NFL-style regular season schedule for the upcoming year: division rivals home-and-away, rotating in-conference and cross-conference divisional matchups (derived purely from the year number, so it's always reproducible), and the remaining games matched by how each team finished last season. You'll be able to preview the whole thing here before downloading anything. Still under construction.</div>
+    <h2 class="section-title">Schedule Builder</h2>
+    <div class="predict-disclaimer">Generates a full NFL-style regular season for Year ${esc(targetYear)}: division rivals home-and-away, rotating in-conference and cross-conference divisional matchups (derived purely from the year number - always the same result for the same year, no matter how many times this runs), and the rest matched by how each team finished last season (via the draft-order signal). One league-wide bye week (${esc(byeWeek)}) instead of 32 staggered ones - a deliberate simplification for reliability, not an oversight. Nothing here touches your save until you download.</div>
+    <div class="card-picker" style="margin-top:14px;">
+      <select id="schedule-team-select">${teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('')}</select>
+      <button class="load-btn ready" id="schedule-generate-btn">GENERATE PREVIEW</button>
+    </div>
+    <div id="schedule-result"></div>
   `;
+
+  const selectEl = document.getElementById('schedule-team-select');
+  if (lockedTeam) {
+    selectEl.value = lockedTeam.cityabbr;
+    selectEl.disabled = true;
+  }
+  document.getElementById('schedule-generate-btn').addEventListener('click', () => {
+    renderSchedulePreview(selectEl.value, targetYear, byeWeek);
+  });
+  if (lockedTeam) renderSchedulePreview(lockedTeam.cityabbr, targetYear, byeWeek);
+}
+
+function renderSchedulePreview(cityabbr, year, byeWeek) {
+  const resultEl = document.getElementById('schedule-result');
+  if (!resultEl) return;
+  const team = lastRosterTeams.find(t => t.cityabbr === cityabbr);
+  if (!team) return;
+
+  const schedule = buildFullSchedule(lastRosterTeams, year, byeWeek);
+  const brand = singleTeamBranding(cityabbr);
+
+  const teamGames = schedule.filter(g => g.home.cityabbr === cityabbr || g.away.cityabbr === cityabbr)
+    .sort((a, b) => a.week - b.week);
+  const teamRows = [];
+  for (let w = 1; w <= 17; w++) {
+    if (w === byeWeek) {
+      teamRows.push(`<div class="dp-row"><span class="dp-pos" style="flex:0 0 50px;">Wk ${esc(w)}</span><span class="dp-name" style="color:var(--muted); font-style:italic;">BYE</span></div>`);
+      continue;
+    }
+    const g = teamGames.find(g => g.week === w);
+    if (!g) continue;
+    const isHome = g.home.cityabbr === cityabbr;
+    const opp = isHome ? g.away : g.home;
+    const oppBrand = singleTeamBranding(opp.cityabbr);
+    teamRows.push(`<div class="dp-row">
+      <span class="dp-pos" style="flex:0 0 50px;">Wk ${esc(w)}</span>
+      <span class="dp-name">${isHome ? 'vs' : '@'} <span class="fa-team-bubble" style="background:${oppBrand.primary}; color:${oppBrand.secondary};">${esc(opp.cityabbr)}</span> ${esc(opp.city)} ${esc(opp.name)}</span>
+    </div>`);
+  }
+
+  // Full league week-by-week grid, collapsed by default (256 games is a lot to show at once).
+  const weekBlocks = [];
+  for (let w = 1; w <= 17; w++) {
+    if (w === byeWeek) {
+      weekBlocks.push(`<div class="aa-compact-group"><div class="aa-compact-group-title">WEEK ${esc(w)} - LEAGUE BYE</div></div>`);
+      continue;
+    }
+    const games = schedule.filter(g => g.week === w);
+    weekBlocks.push(`<div class="aa-compact-group"><div class="aa-compact-group-title">WEEK ${esc(w)}</div>${games.map(g => {
+      const hb = singleTeamBranding(g.away.cityabbr), ab = singleTeamBranding(g.home.cityabbr);
+      return `<div class="aa-compact-row"><span class="fa-team-bubble" style="background:${hb.primary}; color:${hb.secondary};">${esc(g.away.cityabbr)}</span><span style="flex:1; text-align:center; color:var(--muted);">@</span><span class="fa-team-bubble" style="background:${ab.primary}; color:${ab.secondary};">${esc(g.home.cityabbr)}</span></div>`;
+    }).join('')}</div>`);
+  }
+
+  resultEl.innerHTML = `
+    <div class="fa-col-banner" style="background:${brand.primary}; color:${brand.secondary}; margin-top:14px;">${esc(team.city)} ${esc(team.name)} - Year ${esc(year)} Schedule</div>
+    <div class="dp-group" style="margin-top:10px;">${teamRows.join('')}</div>
+
+    <button class="load-btn" id="schedule-toggle-league-btn" style="margin-top:16px;">Show Full League Schedule (all 32 teams)</button>
+    <div id="schedule-league-grid" style="display:none; margin-top:12px;">
+      <div class="aa-columns">
+        <div class="aa-column">${weekBlocks.slice(0, 9).join('')}</div>
+        <div class="aa-column">${weekBlocks.slice(9).join('')}</div>
+      </div>
+    </div>
+
+    <div class="aa-column-title" style="margin-top:20px;">SAVE THIS SCHEDULE</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Downloads a schedule.txt for Year ${esc(year)}, formatted exactly like the game's own export - every game shows -1/-1 for scores (unplayed), matching a fresh, not-yet-started season.</p>
+    <button class="load-btn ready" id="schedule-download-btn">Download schedule.txt</button>
+    <div class="p-note" id="schedule-export-status" style="margin-top:8px;"></div>
+  `;
+
+  document.getElementById('schedule-toggle-league-btn').addEventListener('click', () => {
+    const grid = document.getElementById('schedule-league-grid');
+    const btn = document.getElementById('schedule-toggle-league-btn');
+    const showing = grid.style.display !== 'none';
+    grid.style.display = showing ? 'none' : 'block';
+    btn.textContent = showing ? 'Show Full League Schedule (all 32 teams)' : 'Hide Full League Schedule';
+  });
+
+  document.getElementById('schedule-download-btn').addEventListener('click', () => {
+    const statusEl = document.getElementById('schedule-export-status');
+    try {
+      const text = buildScheduleTxtExport(schedule, year);
+      downloadTextFile(text, 'schedule.txt', 'text/plain');
+      statusEl.textContent = 'Downloaded schedule.txt - replace it in your save folder to make it real in-game.';
+    } catch (e) {
+      statusEl.textContent = 'Export failed: ' + e.message;
+      statusEl.style.color = '#FF4D4D';
+    }
+  });
+}
+
+// Matches the game's own schedule.txt format exactly: tab-separated,
+// CRLF line endings, columns year/week/away_team/home_team/away_score/
+// home_score, with -1/-1 for a game that hasn't been played yet.
+function buildScheduleTxtExport(schedule, year) {
+  const lines = ['year\tweek\taway_team\thome_team\taway_score\thome_score'];
+  schedule.forEach(g => {
+    lines.push(`${year}\t${g.week}\t${Math.round(g.away.tid)}\t${Math.round(g.home.tid)}\t-1\t-1`);
+  });
+  return lines.join('\r\n');
 }
 
 function getMyCoachedTeam() {
@@ -6958,7 +7382,8 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
     const actionButtons = state ? `
       <span class="fa-row-actions">
         <button class="fa-quick-min" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="Queue a minimum offer (65% of ask, their preferred years) - works on easygoing vets, fails on greedy or unhappy ones">Min</button>
-        ${allowCut ? `<button class="fa-quick-cut${isCut ? ' active' : ''}" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="${isCut ? 'Cancel - keep pursuing them' : 'Mark: the team is ready to move on'}">${isCut ? 'Cut \u2713' : 'Cut'}</button>` : ''}
+        ${allowCut ? `<button class="fa-quick-cut${isCut ? ' active' : ''}" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="${isCut ? 'Cancel - keep pursuing them' : 'Mark: the team is ready to move on. Waits to see if an AI team picks them up naturally (chance of a better swap partner) - finalized at Round 5 if nobody does.'}">${isCut ? 'Cut \u2713' : 'Cut'}</button>` : ''}
+        ${allowCut ? `<button class="fa-quick-cutnow" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" title="Cut them RIGHT NOW - instant cap relief and salary-rank improvement, same swap-for-a-replacement mechanism as Round 5, just resolved immediately instead of waiting.">Now</button>` : ''}
       </span>` : '';
     const noteParts = [];
     if (ask.isTopTier) noteParts.push('Elite (top-10 at position)');
@@ -6993,7 +7418,7 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
         ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 34px;') : ''}${faSortHeaderCell('Age', 'age')}
         ${faSortHeaderCell('SKL', 'skill', 'flex:0 0 30px;')}${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 60px;')}
         ${faSortHeaderCell('Yrs', 'years', 'flex:0 0 30px;')}${faSortHeaderCell('Int', 'interest', 'flex:0 0 30px; text-align:center;')}<span class="dp-age" style="flex:0 0 56px; text-align:center;">\u2B50\uD83C\uDFC6\uD83E\uDD1D</span>
-        ${state ? '<span class="dp-age" style="flex:0 0 74px;">Quick</span>' : ''}
+        ${state ? '<span class="dp-age" style="flex:0 0 108px;">Quick</span>' : ''}
       </div>
       ${rows || '<div class="empty-note" style="padding:10px;">None right now.</div>'}
     </div>
@@ -7100,6 +7525,24 @@ function wireFaBoardClicks(resultEl, team, state) {
         }
       });
     });
+    resultEl.querySelectorAll('.fa-quick-cutnow').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        e.stopPropagation();
+        const key = btn.dataset.faKey;
+        const idx = Number(btn.dataset.faIdx);
+        const cacheEntry = (window.__faBoardCaches && window.__faBoardCaches[key]) ? window.__faBoardCaches[key][idx] : null;
+        if (!cacheEntry) return;
+        const pid = String(cacheEntry.player.pid);
+        const confirmed = await showConfirm('CUT NOW',
+          `Cut ${cacheEntry.player.fname} ${cacheEntry.player.lname} immediately? This can't be undone - they move to another team's roster right away for instant cap relief and a same-position player comes back. They'll stay available on the open market if you want to sign them again later.`);
+        if (!confirmed) return;
+        const poolEntry = state.pool.find(pe => pe.pid === pid);
+        if (poolEntry) {
+          faExecuteImmediateCut(poolEntry, team, state);
+          renderFreeAgencyResult(team.cityabbr);
+        }
+      });
+    });
   }
 }
 
@@ -7154,8 +7597,9 @@ function getUfaFate(entry, state) {
 function buildFaFinalRecapHtml(state, team) {
   const mySignings = state.signings.filter(s => s.wasUser);
   const cutReplacements = state.signings.filter(s => s.isCutReplacement);
+  const immediateCuts = state.signings.filter(s => s.isImmediateCut);
   const unresolvedDepartures = state.signings.filter(s => s.isUnresolvedDeparture);
-  const otherSignings = state.signings.filter(s => !s.wasUser && !s.isCutReplacement && !s.isUnresolvedDeparture);
+  const otherSignings = state.signings.filter(s => !s.wasUser && !s.isCutReplacement && !s.isUnresolvedDeparture && !s.isImmediateCut);
   const myRows = mySignings.length
     ? mySignings.map(s => `<li>${esc(s.player.fname.charAt(0))}. ${esc(s.player.lname)} (${esc(s.player.position)}) from ${esc(s.fromTeam.cityabbr)} - $${esc(s.salary.toFixed(1))}M/${esc(s.years)}Y, Round ${esc(s.round)}${s.giveBack ? ` — sent back ${esc(s.giveBack.fname.charAt(0))}. ${esc(s.giveBack.lname)}` : ''}</li>`).join('')
     : '<li>No signings made.</li>';
@@ -8303,6 +8747,12 @@ function openOfferModal(player, currentTeam, targetTeam, simState) {
     : player.pers_winner >= 40
     ? `cares some about the team's competitiveness, but it's not the deciding factor`
     : `not particularly driven by team success - money and situation matter more than the roster's ceiling`;
+  const iqTier = traitTier(player.pers_iq, true);
+  const workEthicTier = traitTier(player.pers_work_ethic, true);
+  const popularityTier = traitTier(player.pers_popularity, true);
+  const iqRead = player.pers_iq >= 70 ? 'weighs the actual situation heavily - reads roster quality and fit rationally, less swayed by mood or raw emotion' : player.pers_iq >= 40 ? 'a fairly balanced read on the situation' : 'decisions lean more on gut feeling and mood than a cold read of the situation';
+  const workEthicRead = player.pers_work_ethic >= 70 ? 'confident enough to bet on themselves - more open to a shorter, prove-it deal than their loyalty alone would suggest' : player.pers_work_ethic >= 40 ? 'no strong pull on contract length either way' : 'prefers the security of a longer guaranteed deal over betting on themselves';
+  const popularityRead = player.pers_popularity >= 70 ? 'real star power - commands a bit of a premium on top of pure skill' : player.pers_popularity >= 40 ? 'an ordinary market profile, no real premium or discount' : 'lower profile - not much extra leverage to push the price up';
 
   const threat = simState && simState.competingOffers[String(player.pid)];
 
@@ -8326,6 +8776,12 @@ function openOfferModal(player, currentTeam, targetTeam, simState) {
     <div class="p-note" style="margin:0 0 6px;">${esc(moraleRead)}</div>
     <div class="fa-trait-row"><span class="fa-trait-name">Winner</span><span class="fa-trait-val" style="color:${winnerTier.color};">${player.pers_winner != null ? esc(Math.round(player.pers_winner)) + ' - ' + esc(winnerTier.label) : 'Unknown'}</span></div>
     <div class="p-note" style="margin:0 0 6px;">${esc(winnerRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">IQ</span><span class="fa-trait-val" style="color:${iqTier.color};">${player.pers_iq != null ? esc(Math.round(player.pers_iq)) + ' - ' + esc(iqTier.label) : 'Unknown'}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(iqRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Work Ethic</span><span class="fa-trait-val" style="color:${workEthicTier.color};">${player.pers_work_ethic != null ? esc(Math.round(player.pers_work_ethic)) + ' - ' + esc(workEthicTier.label) : 'Unknown'}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(workEthicRead)}</div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Popularity</span><span class="fa-trait-val" style="color:${popularityTier.color};">${player.pers_popularity != null ? esc(Math.round(player.pers_popularity)) + ' - ' + esc(popularityTier.label) : 'Unknown'}</span></div>
+    <div class="p-note" style="margin:0 0 6px;">${esc(popularityRead)}</div>
 
     <div class="p-section-label">Your Offer</div>
     <div class="offer-slider-row">
