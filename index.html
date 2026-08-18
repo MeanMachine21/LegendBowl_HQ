@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v49</div>
+  <div class="name">LB_RECAP v50</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -6654,7 +6654,15 @@ function buildScheduleRounds(rosterTeams, year) {
     }
   });
 
-  return [...divisionRounds, ...inConfRounds, ...crossConfRounds, ...standingsRounds]; // 16 rounds total
+  // Division games bookend the season instead of clustering at the start -
+  // first 3 division rounds (each rival pair's first meeting) open the
+  // year, last 3 (the rematches) close it, with everything else in
+  // between. Real division games late in the season carry the most
+  // playoff-race weight, so this is deliberate, not arbitrary - and since
+  // every round is already independently conflict-free, reordering which
+  // round lands in which week slot doesn't touch validity at all.
+  const middleRounds = [...inConfRounds, ...crossConfRounds, ...standingsRounds];
+  return [...divisionRounds.slice(0, 3), ...middleRounds, ...divisionRounds.slice(3)]; // 16 rounds total
 }
 
 // Assigns the 16 rounds to 16 of the 17 weeks (skipping the shared bye
