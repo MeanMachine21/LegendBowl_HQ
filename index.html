@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v54</div>
+  <div class="name">LB_RECAP v55</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1189,6 +1189,7 @@
         <div class="check-item" data-key="hof"><span class="led"></span><span class="check-label">Hall of Fame (season awards)</span><span class="check-filename"></span></div>
         <div class="check-item" data-key="player_records"><span class="led"></span><span class="check-label">All-Time Records</span><span class="check-filename"></span></div>
         <div class="check-item" data-key="career_data"><span class="led"></span><span class="check-label">Coach's Corner (career data)</span><span class="check-filename"></span></div>
+        <div class="check-item" data-key="coach_history_archive"><span class="led"></span><span class="check-label">Coach History archive (re-uploaded snapshot)</span><span class="check-filename"></span></div>
         <div class="check-item" data-key="bowls"><span class="led"></span><span class="check-label">Bowl names (optional, matches your save's real names)</span><span class="check-filename"></span></div>
       </div>
       <div class="career-history-panel">
@@ -1197,6 +1198,14 @@
           <button id="career-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT CAREER HISTORY FILE</button>
           <button id="career-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD CAREER HISTORY SNAPSHOT</button>
           <div id="career-history-status" class="career-history-status">Not connected</div>
+        </div>
+      </div>
+      <div class="career-history-panel">
+        <div class="extra-files-note" style="margin-top: 4px;">career_data.txt gets overwritten the same way, every season - without saving history yourself, Coach's Corner can only ever show whichever single season you happened to upload most recently. Same fix, same two options: connect once in Chrome/Edge and it saves automatically, or download a snapshot each session in Firefox/Safari and re-upload it next time.</div>
+        <div class="career-history-controls">
+          <button id="coach-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT COACH HISTORY FILE</button>
+          <button id="coach-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD COACH HISTORY SNAPSHOT</button>
+          <div id="coach-history-status" class="career-history-status">Not connected</div>
         </div>
       </div>
       <div id="extra-files-note" class="extra-files-note"></div>
@@ -4102,15 +4111,41 @@ function parseCareerDataFile(text) {
 // Dedup by team city, since re-uploading a later snapshot from the SAME
 // team should update that team's entry, not create a duplicate.
 function mergeCareerDataFiles(files) {
-  const byTeam = new Map();
+  // Keyed by team+year, not team alone - a coach staying at the same
+  // team across multiple seasons is the COMMON case, and keying by team
+  // alone was silently collapsing every year down to just the latest
+  // snapshot, discarding season-by-season history even when multiple
+  // files were uploaded together in the same session.
+  const byKey = new Map();
   files.forEach(f => {
     let parsed;
     try { parsed = parseCareerDataFile(f.text); } catch (e) { parsed = null; }
     if (!parsed || !parsed.teamCity) return;
-    if (byTeam.has(parsed.teamCity)) byTeam.delete(parsed.teamCity);
-    byTeam.set(parsed.teamCity, parsed);
+    const key = `${parsed.teamCity}-${parsed.year}`;
+    byKey.set(key, parsed);
   });
-  return Array.from(byTeam.values());
+  return Array.from(byKey.values());
+}
+
+// Same key logic, for merging two already-parsed stint arrays (used to
+// combine persisted history with freshly uploaded files).
+function mergeCoachStintSets(stintSetsArrays) {
+  const byKey = new Map();
+  stintSetsArrays.forEach(stints => {
+    (stints || []).forEach(s => {
+      if (!s || !s.teamCity) return;
+      byKey.set(`${s.teamCity}-${s.year}`, s);
+    });
+  });
+  return Array.from(byKey.values());
+}
+
+// Combines whatever's persisted across sessions with anything freshly
+// uploaded right now - the single source of truth every Coach's Corner
+// caller should use instead of reading pendingCareerDataFiles directly.
+function getAllCoachStints() {
+  const fresh = mergeCareerDataFiles(pendingCareerDataFiles);
+  return mergeCoachStintSets([persistedCoachStints, fresh]);
 }
 
 function parseHofFile(text) {
@@ -4302,6 +4337,7 @@ function identifyFile(filename, rawText) {
       const data = JSON.parse(cleaned);
       if (data.playbooks) return 'playbooks';
       if (Array.isArray(data.rows) && !Array.isArray(data.ROOT)) return 'career_history_archive';
+      if (Array.isArray(data.stints) && !Array.isArray(data.ROOT)) return 'coach_history_archive';
       if (Array.isArray(data.ROOT)) {
         const first = data.ROOT[0] || {};
         if ('message_list' in first) return 'franchisenews';
@@ -4351,6 +4387,12 @@ function assignByType(type, text, filename) {
       if (Array.isArray(parsed.rows)) persistedCareerRows = mergeScheduleRowSets([persistedCareerRows, parsed.rows]);
     } catch (e) { /* malformed archive - ignore rather than block the rest of the load */ }
   }
+  else if (type === 'coach_history_archive') {
+    try {
+      const parsed = JSON.parse(text);
+      if (Array.isArray(parsed.stints)) persistedCoachStints = mergeCoachStintSets([persistedCoachStints, parsed.stints]);
+    } catch (e) { /* malformed archive - ignore rather than block the rest of the load */ }
+  }
   else if (type === 'milestones') { milestonesText = text; }
   else if (type === 'hof') {
     hofText = text;
@@ -4372,7 +4414,7 @@ function assignByType(type, text, filename) {
   else if (type === 'original_roster') { originalRosterText = text; }
 }
 
-const CHECKLIST_KEYS = ['stats', 'playsheet', 'roster_user', 'schedule', 'colors', 'career_history_archive', 'hof', 'player_records', 'career_data', 'bowls'];
+const CHECKLIST_KEYS = ['stats', 'playsheet', 'roster_user', 'schedule', 'colors', 'career_history_archive', 'coach_history_archive', 'hof', 'player_records', 'career_data', 'bowls'];
 const recognizedExtras = [];
 const unrecognizedFiles = [];
 
@@ -4669,6 +4711,14 @@ function tryBuild() {
         updateCareerHistoryStatusUI();
       }
     } catch (err) { showError('Loaded Schedule.txt, but couldn\'t parse it. (' + err.message + ')'); }
+  }
+  if (pendingCareerDataFiles.length && coachHistoryFileHandle) {
+    try {
+      const freshStints = mergeCareerDataFiles(pendingCareerDataFiles);
+      persistedCoachStints = mergeCoachStintSets([persistedCoachStints, freshStints]);
+      saveCoachHistoryFile(persistedCoachStints);
+      updateCoachHistoryStatusUI();
+    } catch (err) { showError('Loaded career_data.txt, but couldn\'t parse it. (' + err.message + ')'); }
   }
 
   lastRosterTeams = rosterTeams;
@@ -6191,7 +6241,7 @@ function buildPlayoffPredictionHtml() {
     return cityabbr ? `${rankLabel(tid)} ${teamBadge(cityabbr, fullName)}` : `${rankLabel(tid)} ?`;
   };
 
-  const confNamesFromCareerData = pendingCareerDataFiles.length ? mergeCareerDataFiles(pendingCareerDataFiles)[0].conferenceNames : null;
+  const confNamesFromCareerData = getAllCoachStints().length ? getAllCoachStints()[0].conferenceNames : null;
   // bowls.txt's prestige 16-21 also carries conference names (G5, ACC, Pac
   // 12, Big 12, SEC, Big 10 in that order) - used as a fallback when
   // career_data.txt hasn't been uploaded, mapped to the same conf0-5 index
@@ -6955,7 +7005,7 @@ function buildScheduleTxtExport(schedule, year) {
 }
 
 function getMyCoachedTeam() {
-  const stints = mergeCareerDataFiles(pendingCareerDataFiles);
+  const stints = getAllCoachStints();
   if (!stints.length) return null;
   return stints.reduce((latest, s) => {
     if (!latest) return s;
@@ -7878,7 +7928,7 @@ function renderDraftPrepResult(cityabbr) {
     if (!players.length) return '';
     const rows = players.map(p => `<div class="dp-row">
       <span class="dp-pos">${esc(pos)}</span>
-      <span class="dp-name">${p.captain ? '\u2B50 ' : ''}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
+      <span class="dp-name">${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
@@ -8225,12 +8275,12 @@ function renderTradeMachine() {
 function renderCoachsCorner() {
   const container = document.getElementById('view-coach');
   if (!container) return;
-  if (!pendingCareerDataFiles.length) {
+  if (!getAllCoachStints().length) {
     container.innerHTML = `<h2 class="section-title">Coach's Corner</h2><div class="empty-note">Load a career_data.txt export to see your coaching career.</div>`;
     return;
   }
 
-  const stints = mergeCareerDataFiles(pendingCareerDataFiles)
+  const stints = getAllCoachStints()
     .sort((a, b) => (b.year - a.year) || (b.week - a.week));
   const current = stints[0];
   const history = stints.slice(1);
@@ -8242,7 +8292,7 @@ function renderCoachsCorner() {
   const historyHtml = history.length ? `
     <div class="aa-column-title" style="margin-top:20px;">COACHING HISTORY</div>
     <div class="aa-compact-group">
-      ${history.map(s => `<div class="aa-compact-row"><span class="name">${esc(s.teamCity)} ${esc(s.teamName || '')}</span><span class="predict-record">${record(s.wins, s.losses)} career at last snapshot</span></div>`).join('')}
+      ${history.map(s => `<div class="aa-compact-row"><span class="name">Year ${esc(s.year)} - ${esc(s.teamCity)} ${esc(s.teamName || '')}</span><span class="predict-record">${record(s.wins, s.losses)}</span></div>`).join('')}
     </div>
   ` : '';
 
@@ -8647,6 +8697,84 @@ function downloadCareerHistorySnapshot() {
 
 const careerHistoryDownloadBtn = document.getElementById('career-history-download-btn');
 if (careerHistoryDownloadBtn) careerHistoryDownloadBtn.addEventListener('click', downloadCareerHistorySnapshot);
+
+// Same pattern as the Career (Schedule) History file above, applied to
+// career_data.txt specifically - the game overwrites this file with a
+// single fresh snapshot every season too, so without this, Coach's
+// Corner can only ever show whichever season you happened to upload
+// most recently. Also fixes a real bug found while building this: the
+// merge logic used to key stints by team city alone, silently
+// collapsing multiple seasons at the same team into just one - fixed to
+// key by team+year instead, so this persistence layer has real
+// season-by-season history to accumulate.
+let coachHistoryFileHandle = null;
+let persistedCoachStints = [];
+
+async function connectCoachHistoryFile() {
+  if (!OBS_FILE_SUPPORTED) return;
+  try {
+    coachHistoryFileHandle = await window.showSaveFilePicker({
+      suggestedName: 'mm_coach_history.json',
+      types: [{ description: 'JSON file', accept: { 'application/json': ['.json'] } }],
+    });
+    try {
+      const file = await coachHistoryFileHandle.getFile();
+      const text = await file.text();
+      if (text && text.trim()) {
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed.stints)) persistedCoachStints = parsed.stints;
+      }
+    } catch (readErr) {
+      // Brand new/empty file - nothing to load yet, that's fine.
+    }
+    updateCoachHistoryStatusUI();
+    if (hasRenderedOnce) tryBuild();
+  } catch (err) {
+    // User cancelled the picker - not an error worth surfacing.
+  }
+}
+
+async function saveCoachHistoryFile(stints) {
+  if (!coachHistoryFileHandle) return;
+  try {
+    const writable = await coachHistoryFileHandle.createWritable();
+    await writable.write(JSON.stringify({ stints }));
+    await writable.close();
+  } catch (err) {
+    showError('Couldn\'t save to the Coach History file - you may need to reconnect it. (' + err.message + ')');
+  }
+}
+
+function updateCoachHistoryStatusUI() {
+  const el = document.getElementById('coach-history-status');
+  if (!el) return;
+  if (coachHistoryFileHandle) {
+    el.textContent = `✓ Connected — ${persistedCoachStints.length} season${persistedCoachStints.length === 1 ? '' : 's'} saved across your career`;
+  } else {
+    el.textContent = 'Not connected';
+  }
+  el.classList.toggle('connected', !!coachHistoryFileHandle);
+}
+
+const coachHistoryBtn = document.getElementById('coach-history-connect-btn');
+if (coachHistoryBtn) {
+  if (!OBS_FILE_SUPPORTED) coachHistoryBtn.style.display = 'none';
+  else coachHistoryBtn.addEventListener('click', connectCoachHistoryFile);
+}
+
+function downloadCoachHistorySnapshot() {
+  const stints = getAllCoachStints();
+  const blob = new Blob([JSON.stringify({ stints })], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'mm_coach_history.json';
+  a.click();
+  URL.revokeObjectURL(url);
+}
+
+const coachHistoryDownloadBtn = document.getElementById('coach-history-download-btn');
+if (coachHistoryDownloadBtn) coachHistoryDownloadBtn.addEventListener('click', downloadCoachHistorySnapshot);
 
 
 // ---- Player detail modal ----
