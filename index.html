@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v52</div>
+  <div class="name">LB_RECAP v53</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -6695,20 +6695,48 @@ function buildFullSchedule(rosterTeams, year, splitIndex) {
   return schedule;
 }
 
+// hof.txt's year column only ever gets a new entry once a season is
+// genuinely, fully complete (awards aren't handed out mid-season) - a
+// much less ambiguous signal than schedule.txt, which can legitimately
+// be showing either the season that JUST finished OR an already-
+// pre-populated fresh one with every score still -1 (confirmed this
+// caused a real off-by-one bug: a save 2 seasons in, about to start
+// year 3, generated a schedule labeled year 4, because schedule.txt was
+// already the freshly pre-populated year-3 stub and got a +1 on top).
+function getMaxHofYear() {
+  const awards = mergeHofFiles(pendingHofFiles);
+  let maxYear = null;
+  awards.forEach(a => { if (a.year != null && (maxYear == null || a.year > maxYear)) maxYear = a.year; });
+  return maxYear;
+}
+
 function renderSchedule() {
   const container = document.getElementById('view-schedule');
   if (!container || !lastRosterTeams) return;
 
-  const currentYear = getCurrentYear(lastScheduleRows) || 1;
-  const targetYear = currentYear + 1;
+  const maxHofYear = getMaxHofYear();
+  const scheduleBasedYear = (getCurrentYear(lastScheduleRows) || 1) + 1;
+  const targetYear = maxHofYear != null ? maxHofYear + 1 : scheduleBasedYear;
+  const yearMismatch = maxHofYear != null && (maxHofYear + 1) !== scheduleBasedYear;
 
   const myCoachedTeam = getMyCoachedTeam();
   const lockedTeam = myCoachedTeam ? lastRosterTeams.find(t => Math.round(t.tid) === myCoachedTeam.tid) : null;
   const teamsSorted = [...lastRosterTeams].sort((a, b) => (a.city || '').localeCompare(b.city || ''));
 
+  const yearWarningHtml = !maxHofYear ? `
+    <div class="predict-disclaimer" style="border-left-color:#FF9F40;">
+      <strong style="color:#FF9F40;">No hof.txt loaded.</strong> Using Year ${esc(targetYear)} based on schedule.txt alone, which can be ambiguous (it can't always tell "the season that just finished" apart from "an already-pre-populated fresh season"). Upload hof.txt alongside your other files for a reliable year - awards only get recorded once a season is genuinely complete, so it doesn't have that ambiguity.
+    </div>
+  ` : yearMismatch ? `
+    <div class="predict-disclaimer" style="border-left-color:#FF3D71;">
+      <strong style="color:#FF3D71;">Year mismatch.</strong> hof.txt's most recent awards are from Year ${esc(maxHofYear)} (so Year ${esc(maxHofYear + 1)} should be next), but schedule.txt suggests Year ${esc(scheduleBasedYear)} instead. Using the hof.txt-based value (Year ${esc(targetYear)}) since it's the more reliable signal - double check this is actually the year you expect before downloading.
+    </div>
+  ` : '';
+
   container.innerHTML = `
     <h2 class="section-title">Schedule Builder</h2>
     <div class="predict-disclaimer">Generates a full NFL-style regular season for Year ${esc(targetYear)}: division rivals home-and-away, rotating in-conference and cross-conference divisional matchups (derived purely from the year number - always the same result for the same year, no matter how many times this runs), and the rest matched by how each team finished last season (via the draft-order signal). Every week has real games - byes are split across two weeks, 16 teams resting each time, rather than the whole league going dark at once. Nothing here touches your save until you download.</div>
+    ${yearWarningHtml}
     <div class="card-picker" style="margin-top:14px;">
       <select id="schedule-team-select">${teamsSorted.map(t => `<option value="${esc(t.cityabbr)}">${esc(t.city)} ${esc(t.name)}</option>`).join('')}</select>
       <button class="load-btn ready" id="schedule-generate-btn">GENERATE PREVIEW</button>
