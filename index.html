@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v56</div>
+  <div class="name">LB_RECAP v57</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -3572,7 +3572,7 @@ function predictPlayoffField(rosterTeams, scheduleRows, tidToConference, tidToDi
   if (!allTids.length || !scheduleRows || !scheduleRows.length) return null;
 
   const rawRankByTid = {};
-  allTids.forEach(tid => { rawRankByTid[tid] = getMostRecentTrueRank(scheduleRows, tid); });
+  allTids.forEach(tid => { rawRankByTid[tid] = getLegendBowlPowerRank(rosterTeams, tid); });
 
   // Schedule.txt records each team's rank at the moment of THEIR OWN most
   // recent game, not a single synchronized weekly snapshot - if two teams'
@@ -3912,6 +3912,23 @@ function isOffSeason(rows) {
 // where there's no completed game's score to match against for
 // disambiguation. Scans every row this team appears in with a real
 // (non -1) rank value and takes the most recent one by year/week.
+// The correct rank source for odds/rank badges in this game - reuses the
+// same power-ranking system already proven for Playoff Bracket seeding
+// (win% + offense/defense efficiency vs. league average), requiring only
+// 1 played game to produce a real number. getMostRecentTrueRank (below)
+// depended on home_rank/away_rank columns that Legend Bowl's schedule.txt
+// simply doesn't have - confirmed directly, the real header is just
+// year/week/away_team/home_team/away_score/home_score. That was a College
+// Bowl holdover (that tool's schedule.txt format apparently does carry
+// rank columns) that never had real data to read from in this app, which
+// is why odds and rank badges silently showed nothing everywhere they
+// were supposed to appear, not just on Matchup Card.
+function getLegendBowlPowerRank(rosterTeams, tid) {
+  const rankings = computeLegendBowlPowerRankings(rosterTeams);
+  const entry = rankings.find(e => e.tid === tid);
+  return entry ? entry.powerRank : null;
+}
+
 function getMostRecentTrueRank(rows, tid) {
   let best = null;
   (rows || []).forEach(r => {
@@ -5637,7 +5654,7 @@ function renderTeamCardResult(cityabbr) {
       <div class="nameplate team-card-nameplate" style="background:${brand.primary}; color:${brand.secondary};">
         ${starRow(info.prestige, brand.secondary)}
         <div class="np-city team-card-city">${esc(team.city)} ${esc(team.name)}</div>
-        <div class="np-rank team-card-rank">${esc(rankBadgeTextFor(info, getMostRecentTrueRank(lastScheduleRows, info.tid)))}</div>
+        <div class="np-rank team-card-rank">${esc(rankBadgeTextFor(info, getLegendBowlPowerRank(lastRosterTeams, info.tid)))}</div>
         ${recordHtml}
       </div>
       ${fieldHtml}
@@ -6074,8 +6091,8 @@ function renderPlayoffBracket() {
       const homeWon = isPlayed && schedRow.homeScore > schedRow.awayScore;
       const visB = branding[awayCity], homeB = branding[homeCity];
       const oddsHtml = isPlayed ? '' : buildOddsLineCompact(
-        getMostRecentTrueRank(lastScheduleRows, schedRow.awayTid), awayCity,
-        getMostRecentTrueRank(lastScheduleRows, schedRow.homeTid), homeCity
+        getLegendBowlPowerRank(lastRosterTeams, schedRow.awayTid), awayCity,
+        getLegendBowlPowerRank(lastRosterTeams, schedRow.homeTid), homeCity
       );
       return `<div class="bracket-slot filled${isPlayed ? '' : ' unplayed'}">
         ${bowlHtml}
@@ -8481,14 +8498,14 @@ function renderMatchupCardResult(cityA, cityB) {
         <div class="nameplate" style="background:${branding[cityA].primary}; color:${branding[cityA].secondary};">
           ${starRow(infoA.prestige, branding[cityA].secondary)}
           <div class="np-city">${esc(teamA.city)}</div>
-          <div class="np-rank">${esc(rankBadgeTextFor(infoA, getMostRecentTrueRank(lastScheduleRows, infoA.tid)))}</div>
+          <div class="np-rank">${esc(rankBadgeTextFor(infoA, getLegendBowlPowerRank(lastRosterTeams, infoA.tid)))}</div>
           ${recordA}
         </div>
-        <div class="scorebug-center"><div class="center-tag">VS</div>${buildOddsLineHtml(getMostRecentTrueRank(lastScheduleRows, infoA.tid), cityA, getMostRecentTrueRank(lastScheduleRows, infoB.tid), cityB)}</div>
+        <div class="scorebug-center"><div class="center-tag">VS</div>${buildOddsLineHtml(getLegendBowlPowerRank(lastRosterTeams, infoA.tid), cityA, getLegendBowlPowerRank(lastRosterTeams, infoB.tid), cityB)}</div>
         <div class="nameplate" style="background:${branding[cityB].primary}; color:${branding[cityB].secondary};">
           ${starRow(infoB.prestige, branding[cityB].secondary)}
           <div class="np-city">${esc(teamB.city)}</div>
-          <div class="np-rank">${esc(rankBadgeTextFor(infoB, getMostRecentTrueRank(lastScheduleRows, infoB.tid)))}</div>
+          <div class="np-rank">${esc(rankBadgeTextFor(infoB, getLegendBowlPowerRank(lastRosterTeams, infoB.tid)))}</div>
           ${recordB}
         </div>
       </div>
