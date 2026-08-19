@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v57</div>
+  <div class="name">LB_RECAP v59</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -2469,7 +2469,7 @@ function estimateFreeAgentAsk(player, rosterTeams) {
   const greed = player.pers_greed ?? 50;
   const loyalty = player.pers_loyalty ?? 50;
   const workEthic = player.pers_work_ethic ?? 50;
-  const popularity = player.pers_popularity ?? 50;
+  const popularity = player.popularity ?? 50;
   const posRank = computePlayerPositionRank(rosterTeams, player.position, player.skill || 0);
   const isTopTier = posRank.rank <= 10;
 
@@ -6880,7 +6880,6 @@ function renderSchedule() {
   const maxHofYear = getMaxHofYear();
   const scheduleBasedYear = (getCurrentYear(lastScheduleRows) || 1) + 1;
   const targetYear = maxHofYear != null ? maxHofYear + 1 : scheduleBasedYear;
-  const yearMismatch = maxHofYear != null && (maxHofYear + 1) !== scheduleBasedYear;
 
   const myCoachedTeam = getMyCoachedTeam();
   const lockedTeam = myCoachedTeam ? lastRosterTeams.find(t => Math.round(t.tid) === myCoachedTeam.tid) : null;
@@ -6889,10 +6888,6 @@ function renderSchedule() {
   const yearWarningHtml = !maxHofYear ? `
     <div class="predict-disclaimer" style="border-left-color:#FF9F40;">
       <strong style="color:#FF9F40;">No hof.txt loaded.</strong> Using Year ${esc(targetYear)} based on schedule.txt alone, which can be ambiguous (it can't always tell "the season that just finished" apart from "an already-pre-populated fresh season"). Upload hof.txt alongside your other files for a reliable year - awards only get recorded once a season is genuinely complete, so it doesn't have that ambiguity.
-    </div>
-  ` : yearMismatch ? `
-    <div class="predict-disclaimer" style="border-left-color:#FF3D71;">
-      <strong style="color:#FF3D71;">Year mismatch.</strong> hof.txt's most recent awards are from Year ${esc(maxHofYear)} (so Year ${esc(maxHofYear + 1)} should be next), but schedule.txt suggests Year ${esc(scheduleBasedYear)} instead. Using the hof.txt-based value (Year ${esc(targetYear)}) since it's the more reliable signal - double check this is actually the year you expect before downloading.
     </div>
   ` : '';
 
@@ -9049,10 +9044,10 @@ function openOfferModal(player, currentTeam, targetTeam, simState) {
     : `not particularly driven by team success - money and situation matter more than the roster's ceiling`;
   const iqTier = traitTier(player.pers_iq, true);
   const workEthicTier = traitTier(player.pers_work_ethic, true);
-  const popularityTier = traitTier(player.pers_popularity, true);
+  const popularityTier = traitTier(player.popularity, true);
   const iqRead = player.pers_iq >= 70 ? 'weighs the actual situation heavily - reads roster quality and fit rationally, less swayed by mood or raw emotion' : player.pers_iq >= 40 ? 'a fairly balanced read on the situation' : 'decisions lean more on gut feeling and mood than a cold read of the situation';
   const workEthicRead = player.pers_work_ethic >= 70 ? 'confident enough to bet on themselves - more open to a shorter, prove-it deal than their loyalty alone would suggest' : player.pers_work_ethic >= 40 ? 'no strong pull on contract length either way' : 'prefers the security of a longer guaranteed deal over betting on themselves';
-  const popularityRead = player.pers_popularity >= 70 ? 'real star power - commands a bit of a premium on top of pure skill' : player.pers_popularity >= 40 ? 'an ordinary market profile, no real premium or discount' : 'lower profile - not much extra leverage to push the price up';
+  const popularityRead = player.popularity >= 70 ? 'real star power - commands a bit of a premium on top of pure skill' : player.popularity >= 40 ? 'an ordinary market profile, no real premium or discount' : 'lower profile - not much extra leverage to push the price up';
 
   const threat = simState && simState.competingOffers[String(player.pid)];
 
@@ -9080,7 +9075,7 @@ function openOfferModal(player, currentTeam, targetTeam, simState) {
     <div class="p-note" style="margin:0 0 6px;">${esc(iqRead)}</div>
     <div class="fa-trait-row"><span class="fa-trait-name">Work Ethic</span><span class="fa-trait-val" style="color:${workEthicTier.color};">${player.pers_work_ethic != null ? esc(Math.round(player.pers_work_ethic)) + ' - ' + esc(workEthicTier.label) : 'Unknown'}</span></div>
     <div class="p-note" style="margin:0 0 6px;">${esc(workEthicRead)}</div>
-    <div class="fa-trait-row"><span class="fa-trait-name">Popularity</span><span class="fa-trait-val" style="color:${popularityTier.color};">${player.pers_popularity != null ? esc(Math.round(player.pers_popularity)) + ' - ' + esc(popularityTier.label) : 'Unknown'}</span></div>
+    <div class="fa-trait-row"><span class="fa-trait-name">Popularity</span><span class="fa-trait-val" style="color:${popularityTier.color};">${player.popularity != null ? esc(Math.round(player.popularity)) + ' - ' + esc(popularityTier.label) : 'Unknown'}</span></div>
     <div class="p-note" style="margin:0 0 6px;">${esc(popularityRead)}</div>
 
     <div class="p-section-label">Your Offer</div>
