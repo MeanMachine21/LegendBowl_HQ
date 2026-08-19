@@ -1137,7 +1137,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v59</div>
+  <div class="name">LB_RECAP v60</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1175,7 +1175,7 @@
     <div id="upload-section" style="display:none;">
       <label id="dropzone" class="dropzone" for="file-input">
         <div class="dropzone-text">Drop files here, or click to browse</div>
-        <div class="dropzone-hint">Add roster_user.json for Starting Lineup / Matchup Card / All-American / Playoff Bracket, and/or a game's Stats + Playsheet pair for a full Game Recap — either one alone is enough to get started</div>
+        <div class="dropzone-hint">roster_user.json and/or a game's Stats + Playsheet pair - either one alone works</div>
         <input type="file" id="file-input" multiple>
       </label>
 
@@ -1193,18 +1193,15 @@
         <div class="check-item" data-key="bowls"><span class="led"></span><span class="check-label">Bowl names (optional, matches your save's real names)</span><span class="check-filename"></span></div>
       </div>
       <div class="career-history-panel">
-        <div class="extra-files-note" style="margin-top: 4px;">The game completely overwrites Schedule.txt every time you advance to the offseason. In Chrome or Edge, connect a Career History file once and it saves automatically forever after — no backups to remember. In Firefox or Safari (which don't support that), download a snapshot before you're done each session, then drop that same file back in next time — it's one small file to re-upload instead of needing to catch Schedule.txt before every advance.</div>
+        <div class="extra-files-note" style="margin-top: 4px;">The game overwrites Schedule.txt and career_data.txt every season. Chrome/Edge: connect once below, saves automatically forever after. Firefox/Safari: download a snapshot each session and drop it back in next time.</div>
         <div class="career-history-controls">
-          <button id="career-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT CAREER HISTORY FILE</button>
-          <button id="career-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD CAREER HISTORY SNAPSHOT</button>
+          <button id="career-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT SCHEDULE HISTORY</button>
+          <button id="career-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD SNAPSHOT</button>
           <div id="career-history-status" class="career-history-status">Not connected</div>
         </div>
-      </div>
-      <div class="career-history-panel">
-        <div class="extra-files-note" style="margin-top: 4px;">career_data.txt gets overwritten the same way, every season - without saving history yourself, Coach's Corner can only ever show whichever single season you happened to upload most recently. Same fix, same two options: connect once in Chrome/Edge and it saves automatically, or download a snapshot each session in Firefox/Safari and re-upload it next time.</div>
         <div class="career-history-controls">
-          <button id="coach-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT COACH HISTORY FILE</button>
-          <button id="coach-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD COACH HISTORY SNAPSHOT</button>
+          <button id="coach-history-connect-btn" class="go-overlay-btn obs-connect-btn" type="button">CONNECT COACH HISTORY</button>
+          <button id="coach-history-download-btn" class="go-overlay-btn" type="button">DOWNLOAD SNAPSHOT</button>
           <div id="coach-history-status" class="career-history-status">Not connected</div>
         </div>
       </div>
@@ -4087,11 +4084,25 @@ function parsePlayerRecordsFile(text) {
 }
 
 function mergePlayerRecordsFiles(files) {
+  // Keyed by name+category, NOT pid - a currently active player can have
+  // BOTH a live entry (tracking their ongoing career total under their
+  // real active-roster pid) AND a separate frozen historical-milestone
+  // entry (under a different pid in the legacy/retired-player pid range)
+  // for the exact same stat category. Confirmed directly: A.J. Cole, an
+  // active punter, had a return-yards entry at pid 1006 (his real roster
+  // slot, value 75) and a second one at pid 1837 (a legacy-range pid,
+  // value 74) - the same real record, not two different players. Keying
+  // by pid meant these never merged; keying by name+category and keeping
+  // the higher value picks the more current, complete total.
   const byKey = new Map();
   files.forEach(f => {
     let records;
     try { records = parsePlayerRecordsFile(f.text); } catch (e) { records = []; }
-    records.forEach(r => { byKey.set(`${r.pid}-${r.statType}-${r.fname}-${r.lname}`, r); });
+    records.forEach(r => {
+      const key = `${r.fname}-${r.lname}-${r.statType}`;
+      const existing = byKey.get(key);
+      if (!existing || (r.statValue || 0) > (existing.statValue || 0)) byKey.set(key, r);
+    });
   });
   return Array.from(byKey.values());
 }
@@ -6442,16 +6453,16 @@ function renderStatLeaders() {
     const deepDiveEl = document.getElementById('statleaders-deepdive');
     if (!deepDiveEl) return;
     deepDiveEl.innerHTML = `
-      <div class="dp-group">
+      <div class="dp-group" style="max-width:480px;">
         <div class="dp-row dp-header">
-          <span class="dp-pos">Pos</span><span class="dp-name">Name</span><span class="dp-age" style="flex:0 0 40px;">Team</span><span class="dp-stat" style="flex:0 0 80px; text-align:right;">${esc(cat ? cat.label : '')}</span>
+          <span class="dp-pos">Pos</span><span class="dp-name" style="flex:1 1 auto; max-width:220px;">Name</span><span class="dp-age" style="flex:0 0 40px;">Team</span><span class="dp-stat" style="flex:0 0 80px; text-align:right;">${esc(cat ? cat.label : '')}</span>
         </div>
         ${rows.length ? rows.map((entry, i) => {
           const hofCount = hofAwardCountByPid[entry.pid] || 0;
           const brand = singleTeamBranding(entry.cityabbr);
           return `<div class="dp-row">
             <span class="dp-pos" style="flex:0 0 26px;">${esc(i + 1)}</span>
-            <span class="dp-name">${esc(entry.position)} ${esc(`${entry.fname} ${entry.lname}`.trim())}${hofCount > 0 ? ` <span class="hof-trophy-badge">${'\u{1F3C6}'.repeat(hofCount)}</span>` : ''}</span>
+            <span class="dp-name" style="flex:1 1 auto; max-width:220px;">${esc(entry.position)} ${esc(`${entry.fname} ${entry.lname}`.trim())}${hofCount > 0 ? ` <span class="hof-trophy-badge">${'\u{1F3C6}'.repeat(hofCount)}</span>` : ''}</span>
             <span class="dp-age" style="flex:0 0 40px;"><span class="fa-team-bubble" style="background:${brand.primary}; color:${brand.secondary};">${esc(entry.cityabbr)}</span></span>
             <span class="dp-stat" style="flex:0 0 80px; text-align:right;">${esc(entry.value)}</span>
           </div>`;
