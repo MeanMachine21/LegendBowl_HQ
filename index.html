@@ -177,17 +177,22 @@
   .file-manager-toggle:hover { filter: brightness(1.12); color: var(--chalk); }
 
   .scorebug-toggle-row { text-align: center; margin: 4px 0; }
-  .season-indicator {
-    display: none; text-align: center; margin: 10px auto 4px; max-width: 620px;
+  .season-timeline {
+    display: none; margin: 10px auto 8px; max-width: 900px;
+    overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
     background: linear-gradient(180deg, var(--metal-2) 0%, var(--metal-3) 100%);
     border-top: 1px solid var(--metal-1); border-left: 1px solid var(--metal-1);
     border-right: 1px solid var(--metal-5); border-bottom: 1px solid var(--metal-5);
-    border-radius: 6px; padding: 10px 20px;
+    border-radius: 6px; padding: 6px 10px;
   }
-  .season-indicator.visible { display: block; }
-  .season-indicator-text {
-    font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 22px;
-    letter-spacing: 1px; color: var(--lcd-green); text-transform: uppercase;
+  .season-timeline.visible { display: block; }
+  .timeline-stop {
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
+    letter-spacing: 0.5px; color: var(--muted); padding: 4px 6px; margin: 0 1px; border-radius: 3px;
+    cursor: default;
+  }
+  .timeline-stop.current {
+    color: #0a0a0a; background: var(--lcd-green); box-shadow: 0 0 6px 1px rgba(57,255,106,0.6);
   }
   .scorebug-toggle-btn {
     display: inline-flex; align-items: center; gap: 6px; cursor: pointer;
@@ -1137,7 +1142,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v60</div>
+  <div class="name">LB_RECAP v62</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -1215,7 +1220,7 @@
   </div>
 
   <div id="recap" style="display:none;">
-    <div id="season-indicator" class="season-indicator"></div>
+    <div id="season-timeline" class="season-timeline"></div>
     <div class="scorebug-toggle-row">
       <button id="scorebug-toggle" class="scorebug-toggle-btn" type="button"><span id="scorebug-toggle-arrow">▾</span> <span id="scorebug-toggle-label">Hide Score</span></button>
     </div>
@@ -1982,6 +1987,26 @@ function findHofAwardsForPid(hofRawText, pid) {
     }
   }
   return awards;
+}
+
+// Real Super Bowl title count for a team, from hof.txt - Legend Bowl's
+// actual trophy_text is "Super Bowl Champions" (confirmed directly), not
+// "National Championship." Counts every season currently loaded in
+// hof.txt (more with the History persistence feature connected).
+function countTeamSuperBowlTitles(hofRawText, tid) {
+  if (!hofRawText) return 0;
+  const lines = hofRawText.split(/\r\n|\r|\n/).filter(l => l.trim());
+  if (!lines.length) return 0;
+  const header = lines[0].split('\t');
+  const tidCol = header.indexOf('tid');
+  const trophyCol = header.indexOf('trophy_text');
+  if (tidCol === -1 || trophyCol === -1) return 0;
+  let count = 0;
+  for (let i = 1; i < lines.length; i++) {
+    const cols = lines[i].split('\t');
+    if (cols[trophyCol] === 'Super Bowl Champions' && Number(cols[tidCol]) === Number(tid)) count++;
+  }
+  return count;
 }
 
 // Replays a completed Free Agency simulation's ENTIRE signings history
@@ -3455,13 +3480,11 @@ function computePowerRankings(rosterTeams) {
 // (below) resolves the exact bowl name when possible.
 function describeGameWeek(week) {
   if (week == null) return null;
-  if (week === 11) return 'Conference Championship';
-  if (week === 12) return 'Playoffs — Round 1';
-  if (week === 13) return 'Playoffs — Round 2';
-  if (week === 14) return 'Playoffs — Round 3';
-  if (week === 15) return 'Playoffs — Semifinals';
-  if (week === 16) return 'National Championship';
-  return null;
+  if (week === 18) return 'Wild Card';
+  if (week === 19) return 'Divisional';
+  if (week === 20) return 'Conference Championship';
+  if (week === 21) return 'Super Bowl';
+  return null; // weeks 1-17 are all regular season - falls back to "Week N" wherever this is used
 }
 
 // The playoff bracket is rigid and confirmed to always play in the same
@@ -3730,8 +3753,7 @@ const BRACKET_ROUNDS = [
 // rows), so treat this as needing a real-data check once available, not as
 // battle-tested.
 function describeGameWeekSpecific(scheduleRows, matchedRow) {
-  const bowlName = getBowlNameForGame(scheduleRows, matchedRow);
-  return bowlName || describeGameWeek(matchedRow.week);
+  return describeGameWeek(matchedRow.week); // Legend Bowl has no bowl-name concept - Wild Card/Divisional/Conference/Super Bowl only
 }
 
 function applyTrueRanks(colorFields, scheduleRows, model) {
@@ -3902,6 +3924,35 @@ function isOffSeason(rows) {
     (r.awayScore === -1 || r.homeScore === -1)
   );
   return !anyPendingRealGameThisYear;
+}
+
+// Where the loaded save sits on the season timeline - reuses isOffSeason
+// for that branch, and for the in-season case finds the EARLIEST week
+// with a real pending game (a scheduled matchup, not yet played) as
+// "what's coming up next," which is the natural reading of "where am I
+// right now" for someone about to resume playing.
+function getTimelinePosition(rows) {
+  if (!rows || !rows.length) return null;
+  const offSeason = isOffSeason(rows);
+  if (offSeason == null) return null;
+  if (offSeason === true) return { stage: 'offseason' };
+
+  let year = null;
+  rows.forEach(r => { if (r.year != null && (year == null || r.year > year)) year = r.year; });
+  if (year == null) return null;
+  const yearRows = rows.filter(r => r.year === year);
+  const pendingReal = yearRows.filter(r =>
+    r.awayTid != null && r.awayTid !== -1 && r.homeTid != null && r.homeTid !== -1 &&
+    (r.awayScore === -1 || r.homeScore === -1)
+  );
+  if (!pendingReal.length) return { stage: 'offseason' }; // shouldn't happen given the isOffSeason check above, but a safe fallback
+  const nextWeek = Math.min(...pendingReal.map(r => r.week));
+  if (nextWeek <= 17) return { stage: 'week', weekNum: nextWeek };
+  if (nextWeek === 18) return { stage: 'wildcard' };
+  if (nextWeek === 19) return { stage: 'divisional' };
+  if (nextWeek === 20) return { stage: 'conference' };
+  if (nextWeek === 21) return { stage: 'superbowl' };
+  return null;
 }
 
 // A team's most recently known TRUE rank, independent of any one specific
@@ -4121,14 +4172,7 @@ function parseCareerDataFile(text) {
     tid: num('tid'), teamCity: str('team_city'), teamName: str('team_name'),
     coachFname: str('coach_fname'), coachLname: str('coach_lname'),
     baseYear: num('base_year'), year: num('year'), week: num('week'),
-    contractYear: num('contract_year'), contractTotalYears: num('contract_total_years'),
-    contractPrestige: num('contract_prestige'), contractWins: num('contract_wins'), contractBowls: num('contract_bowls'),
-    lastGame: str('last_game'), teamYears: num('team_years'), winningSeasons: num('winning_seasons'),
-    winStreak: num('win_streak'), lossStreak: num('loss_streak'), longestWinStreak: num('longest_win_streak'),
     wins: num('wins'), losses: num('losses'),
-    playoffsMade: num('playoffs_made'), playoffWins: num('playoff_wins'), playoffLosses: num('playoff_losses'),
-    conferenceChamps: num('conference_champs'), bowlWins: num('bowl_wins'), bowlLosses: num('bowl_losses'),
-    nattyWins: num('natty_wins'), nattyLosses: num('natty_losses'),
     conferenceNames: [0, 1, 2, 3, 4, 5].map(i => str(`conf${i}`)),
   };
 }
@@ -4755,7 +4799,7 @@ function tryBuild() {
   lastTidToConference = rosterTeams ? buildTidToConferenceMap(rosterTeams) : {};
   lastTidToDivision = rosterTeams ? buildTidToDivisionMap(rosterTeams) : {};
   lastRosterLookup = rosterPlayerLookup;
-  renderSeasonIndicator();
+  renderTimeline();
   renderTeamCardPicker();
   renderMatchupCardPicker();
   renderPlayoffBracket();
@@ -4968,19 +5012,33 @@ function updateTabVisibility(hasGame) {
   }
 }
 
-// Shows a persistent "Week N, Season Y" (or the playoff-round equivalent)
-// badge derived from Schedule.txt, independent of whether any specific game
-// is loaded - works in a roster-only session too, since it's schedule-derived.
-function renderSeasonIndicator() {
-  const el = document.getElementById('season-indicator');
+// Persistent, always-visible timeline strip: WK1...WK17, Wild Card,
+// Divisional, Conference, Super Bowl, Off Season - highlights wherever
+// the loaded save currently sits, auto-scrolled into view. Works in a
+// roster-only session too, since it's entirely schedule-derived.
+const TIMELINE_STOPS = [
+  ...Array.from({ length: 17 }, (_, i) => ({ key: `week-${i + 1}`, short: String(i + 1), full: `Week ${i + 1}`, stage: 'week', weekNum: i + 1 })),
+  { key: 'wildcard', short: 'WC', full: 'Wild Card', stage: 'wildcard' },
+  { key: 'divisional', short: 'DIV', full: 'Divisional', stage: 'divisional' },
+  { key: 'conference', short: 'CONF', full: 'Conference Championship', stage: 'conference' },
+  { key: 'superbowl', short: 'SB', full: 'Super Bowl', stage: 'superbowl' },
+  { key: 'offseason', short: 'OFF', full: 'Off Season', stage: 'offseason' },
+];
+
+function renderTimeline() {
+  const el = document.getElementById('season-timeline');
   if (!el) return;
-  const year = getCurrentYear(lastScheduleRows);
-  if (year == null) { el.classList.remove('visible'); return; }
-  const week = getCurrentWeek(lastScheduleRows, year);
-  if (week == null) { el.classList.remove('visible'); return; }
-  const weekLabel = describeGameWeek(week) || `Week ${week}`;
-  el.innerHTML = `<span class="season-indicator-text">${esc(weekLabel)}, Season ${esc(year)}</span>`;
+  const position = getTimelinePosition(lastScheduleRows);
+  if (!position) { el.classList.remove('visible'); return; }
+
+  el.innerHTML = TIMELINE_STOPS.map(stop => {
+    const isCurrent = stop.stage === position.stage && (stop.stage !== 'week' || stop.weekNum === position.weekNum);
+    return `<span class="timeline-stop${isCurrent ? ' current' : ''}" title="${esc(stop.full)}" data-key="${esc(stop.key)}">${esc(stop.short)}</span>`;
+  }).join('');
   el.classList.add('visible');
+
+  const currentEl = el.querySelector('.timeline-stop.current');
+  if (currentEl) currentEl.scrollIntoView({ behavior: 'auto', inline: 'center', block: 'nearest' });
 }
 
 function revealRecapShell() {
@@ -8342,21 +8400,19 @@ function renderCoachsCorner() {
     <div class="champion-banner" style="background:${brand.primary}; color:${brand.secondary}; border-color:${brand.secondary};">
       <div class="champion-banner-label">${esc(current.coachFname)} ${esc(current.coachLname)}</div>
       <div class="champion-banner-team">${esc(current.teamCity)} ${esc(current.teamName || '')}</div>
-      <div class="champion-banner-score">Year ${esc(current.contractYear)} of ${esc(current.contractTotalYears)} · Season ${esc(current.year)}, Week ${esc(current.week)}</div>
+      <div class="champion-banner-score">Season ${esc(current.year)}, Week ${esc(current.week)}</div>
     </div>
-    <p class="empty-note" style="text-align:left; margin: 14px 0;">${current.lastGame ? `Last game: ${esc(current.lastGame)}` : ''}</p>
+    <p class="empty-note" style="text-align:left; margin: 14px 0;"></p>
     <div class="coach-stats-grid">
       ${statBlock('Career Record', record(current.wins, current.losses))}
-      ${statBlock('This Team', `${esc(current.teamYears ?? 0)} yr${current.teamYears === 1 ? '' : 's'}`)}
-      ${statBlock('Winning Seasons', esc(current.winningSeasons ?? 0))}
-      ${statBlock('Win Streak', esc(current.winStreak ?? 0))}
-      ${statBlock('Longest Win Streak', esc(current.longestWinStreak ?? 0))}
-      ${statBlock('Playoffs Made', esc(current.playoffsMade ?? 0))}
-      ${statBlock('Playoff Record', record(current.playoffWins, current.playoffLosses))}
-      ${statBlock('Conference Champs', esc(current.conferenceChamps ?? 0))}
-      ${statBlock('Bowl Record', record(current.bowlWins, current.bowlLosses))}
-      ${statBlock('National Championship', record(current.nattyWins, current.nattyLosses))}
-      ${statBlock('Contract Requires', `${esc(current.contractWins ?? 0)} wins, prestige ${esc(current.contractPrestige ?? 0)}`)}
+      ${(() => {
+        const ts = currentTeam ? getLatestTeamStats(currentTeam) : null;
+        const wStreak = ts ? Number(ts.stat_winning_streak) || 0 : 0;
+        const lStreak = ts ? Number(ts.stat_losing_streak) || 0 : 0;
+        const streakText = wStreak > 0 ? `W${wStreak}` : lStreak > 0 ? `L${lStreak}` : '-';
+        return statBlock('Current Streak', streakText);
+      })()}
+      ${statBlock('Super Bowl Titles', countTeamSuperBowlTitles(hofText, current.tid))}
     </div>
     ${teamStatsHtml}
     ${historyHtml}
