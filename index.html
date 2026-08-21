@@ -668,8 +668,7 @@
   .fa-salary-group-label { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--muted); text-transform: uppercase; }
   .fa-salary-group-rank { font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 18px; }
 
-  .fa-two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 10px; }
-  @media (max-width: 900px) { .fa-two-col { grid-template-columns: 1fr; } }
+  .fa-two-col { display: flex; flex-direction: column; gap: 16px; margin-top: 10px; }
   .fa-col-banner {
     font-family: 'Big Shoulders Display', 'Anton', sans-serif; font-weight: 800; font-size: 16px;
     text-transform: uppercase; letter-spacing: 0.5px; padding: 8px 12px; border-radius: 6px 6px 0 0;
@@ -1142,7 +1141,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v62</div>
+  <div class="name">LB_RECAP v64</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -7622,6 +7621,9 @@ const FA_SORT_ACCESSORS = {
   from: e => e.team.cityabbr || '',
   age: e => e.player.age || 0,
   skill: e => e.player.skill || 0,
+  speed: e => e.player.speed || 0,
+  agility: e => e.player.agility || 0,
+  strength: e => e.player.strength || 0,
   ask: e => e.ask.askSalary || 0,
   years: e => e.ask.askYears || 0,
   interest: e => e.interest || 0,
@@ -7653,7 +7655,7 @@ function faSortHeaderCell(label, key, style) {
 }
 
 function buildFaBoardHtml(entries, team, totalCount, opts) {
-  const { title, note, keyPrefix, state, allowCut, colorizeFrom, showFrom = true } = opts;
+  const { title, note, keyPrefix, state, allowCut, colorizeFrom, showFrom = true, leagueSpeeds } = opts;
   window.__faBoardCaches = window.__faBoardCaches || {};
   window.__faBoardCaches[keyPrefix] = entries;
 
@@ -7686,7 +7688,10 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
       <span class="dp-name${nameClass}" title="${nameTitle}">${threat ? '\u26A0 ' : ''}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
       ${showFrom ? `<span class="dp-age" style="flex:0 0 34px; ${colorizeFrom ? 'display:flex; justify-content:center;' : ''}">${fromCell}</span>` : ''}
       <span class="dp-age">${esc(Math.round(p.age))}</span>
-      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.skill))};">${esc(Math.round(p.skill))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
       <span class="dp-sal" style="flex:0 0 60px;">$${esc(ask.askSalary.toFixed(1))}M</span>
       <span class="dp-cnt" style="flex:0 0 30px;">${esc(ask.askYears)}Y</span>
       <span class="dp-age" style="flex:0 0 30px; color:${arrow.color}; font-weight:800; text-align:center;" title="${esc(arrow.label)}">${arrow.symbol}</span>
@@ -7700,9 +7705,10 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">${note}</p>
     <div class="dp-group" style="max-height:500px; overflow-y:auto;">
       <div class="dp-row dp-header">
-        ${faSortHeaderCell('Pos', 'pos')}${faSortHeaderCell('Name', 'name')}
-        ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 34px;') : ''}${faSortHeaderCell('Age', 'age')}
-        ${faSortHeaderCell('SKL', 'skill', 'flex:0 0 30px;')}${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 60px;')}
+        ${faSortHeaderCell('Pos', 'pos', 'flex:0 0 28px;')}${faSortHeaderCell('Name', 'name', 'flex:1 1 auto; min-width:68px;')}
+        ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 34px;') : ''}${faSortHeaderCell('Age', 'age', 'flex:0 0 24px; text-align:right;')}
+        ${faSortHeaderCell('SKL', 'skill', 'flex:0 0 30px;')}${faSortHeaderCell('SPD', 'speed', 'flex:0 0 30px;')}${faSortHeaderCell('AGL', 'agility', 'flex:0 0 30px;')}${faSortHeaderCell('STR', 'strength', 'flex:0 0 30px;')}
+        ${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 60px;')}
         ${faSortHeaderCell('Yrs', 'years', 'flex:0 0 30px;')}${faSortHeaderCell('Int', 'interest', 'flex:0 0 30px; text-align:center;')}<span class="dp-age" style="flex:0 0 56px; text-align:center;">\u2B50\uD83C\uDFC6\uD83E\uDD1D</span>
         ${state ? '<span class="dp-age" style="flex:0 0 108px;">Quick</span>' : ''}
       </div>
@@ -7726,16 +7732,20 @@ function buildFaTwoColumnBoardHtml(allEntries, team, state) {
   const mine = filtered.filter(e => e.team.cityabbr === team.cityabbr);
   const others = filtered.filter(e => e.team.cityabbr !== team.cityabbr);
   const brand = singleTeamBranding(team.cityabbr);
+  const leagueSpeeds = (lastRosterTeams || [])
+    .flatMap(t => (t.player || []))
+    .map(p => Math.round(p.speed || 0))
+    .filter(s => s > 0);
 
   const mineHtml = buildFaBoardHtml(mine.slice(0, 75), team, mine.length, {
     title: `YOUR PENDING FREE AGENTS - ${esc(mine.length)}`,
     note: `Currently on your own roster and hitting the open market. Re-sign them here before another team does. Red name = marked "moving on" - if nobody signs them by the end of Round 5, they're auto-swapped for a replacement. \uD83C\uDFC6 = has won a real award (from hof.txt).`,
-    keyPrefix: 'mine', state, allowCut: true, colorizeFrom: false, showFrom: false,
+    keyPrefix: 'mine', state, allowCut: true, colorizeFrom: false, showFrom: false, leagueSpeeds,
   });
   const othersHtml = buildFaBoardHtml(others.slice(0, 75), team, others.length, {
     title: `LEAGUE MARKET - ${esc(others.length)} UFAs${faPositionFilter !== 'ALL' ? ` (${esc(faPositionFilter)})` : ''}`,
     note: `Everyone else's free agents. Tap a column header to sort, tap a player to make an offer. \u2B06 = high interest in ${esc(team.city)}, \u2B07 = very unlikely. \uD83C\uDFC6 = has won a real award (from hof.txt) - it's possible nobody in this class has one.`,
-    keyPrefix: 'others', state, allowCut: false, colorizeFrom: true, showFrom: true,
+    keyPrefix: 'others', state, allowCut: false, colorizeFrom: true, showFrom: true, leagueSpeeds,
   });
 
   const filterOptions = ['ALL', ...DP_ALL_POSITIONS].map(p =>
