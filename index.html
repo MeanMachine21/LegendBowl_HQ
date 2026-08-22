@@ -1142,7 +1142,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v70</div>
+  <div class="name">LB_RECAP v73</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -3222,6 +3222,283 @@ function analyzeDraftNeeds(rosterTeams, team) {
   });
 
   return needs;
+}
+
+// ============================================================
+// TRADING BLOCK
+// ============================================================
+// Lets a user list up to 4 players for other teams to make offers on -
+// distinct from Cut Now (instant, certain, low-value) in that it's
+// slower but need-matched, so offers can genuinely be worth more.
+//
+// Two directions: your listed players draw offers from AI teams that
+// need that position (computeTradeBlockInterest), and a "Rumor Mill"
+// surfaces players OTHER teams would plausibly want to shed, filtered
+// down to only what matches a real need on your own roster
+// (computeSheddabilityScore + your own analyzeDraftNeeds).
+
+// League-wide, per-position salary baseline bucketed by skill tier (5-
+// point bands) - validated directly against real save data. A simple
+// linear salary/skill ratio was tried first and rejected: it
+// systematically flagged elite players as "overpaid" just for being
+// expensive, since real contracts scale non-linearly with talent.
+// Comparing against the median within the same skill tier only flags
+// genuine outliers relative to true peers.
+function buildTradeBlockSalaryBaseline(rosterTeams) {
+  const byPosition = {};
+  (rosterTeams || []).forEach(t => {
+    (t.player || []).forEach(p => {
+      if (p.skill == null || p.salary == null || p.skill <= 0) return;
+      const salary = Number(p.salary) || 0;
+      if (!byPosition[p.position]) byPosition[p.position] = {};
+      const tier = Math.floor(p.skill / 5) * 5;
+      if (!byPosition[p.position][tier]) byPosition[p.position][tier] = [];
+      byPosition[p.position][tier].push(salary);
+    });
+  });
+  const baseline = {}; // "position-tier" -> median salary
+  Object.keys(byPosition).forEach(pos => {
+    Object.keys(byPosition[pos]).forEach(tier => {
+      const salaries = byPosition[pos][tier].slice().sort((a, b) => a - b);
+      baseline[`${pos}-${tier}`] = salaries[Math.floor(salaries.length / 2)];
+    });
+  });
+  return baseline;
+}
+
+// How much a team would plausibly want to shed this specific player -
+// confirmed against real data: correctly surfaces genuine cases (an
+// aging, overpaid backup QB stuck behind a real starter) while NOT
+// falsely flagging misconfigured-depth-chart quirks (a save was found
+// where a 91-skill player was listed as "backup" behind an 82-skill
+// "starter" - being clearly the better player at a position doesn't
+// mean a team would trade them just because of a depth-chart oddity).
+function computeSheddabilityScore(player, teamPlayers, salaryBaseline) {
+  const pos = player.position;
+  const skill = player.skill || 0;
+  const salary = Number(player.salary) || 0;
+  const age = player.age || 0;
+  const depth = player.depth != null ? player.depth : 0;
+
+  let score = 0;
+  const reasons = [];
+
+  if (depth >= 1) {
+    const ahead = (teamPlayers || []).filter(tp => tp.position === pos && (tp.depth != null ? tp.depth : 0) < depth && tp.skill != null);
+    if (ahead.length) {
+      const bestAheadSkill = Math.max(...ahead.map(tp => tp.skill));
+      if (skill <= bestAheadSkill + 3) {
+        const buriedBonus = 20 + Math.max(0, skill - 60) * 0.4;
+        score += buriedBonus;
+        reasons.push(`Stuck behind a ${Math.round(bestAheadSkill)}-skill player at ${pos}.`);
+      }
+    }
+  }
+
+  const tier = Math.floor(skill / 5) * 5;
+  const tierMedian = salaryBaseline[`${pos}-${tier}`];
+  if (tierMedian && tierMedian > 0.5 && salary > tierMedian * 1.6) {
+    const overpayRatio = salary / tierMedian;
+    const overpayBonus = Math.min(35, (overpayRatio - 1) * 20);
+    score += overpayBonus;
+    reasons.push(`Overpaid vs. real skill-tier peers ($${salary.toFixed(1)}M vs. $${tierMedian.toFixed(1)}M typical).`);
+  }
+
+  if (age >= 30 && skill < 80) {
+    const ageBonus = (age - 30) * 1.5;
+    score += ageBonus;
+    reasons.push(`Aging (${Math.round(age)}) without elite skill (${Math.round(skill)} SKL).`);
+  }
+
+  return { score, reasons };
+}
+
+// How interested targetTeam would be in a specific blocked player - three
+// independent paths can each contribute: (1) a real positional need,
+// (2) the player's own raw quality (a good player draws interest even
+// without a desperate need - an upgrade is an upgrade), (3) popularity,
+// which can drive interest in a washed-up/overpriced player purely for
+// the name value, independent of whether they can still really play.
+function computeTradeBlockInterest(blockedPlayer, targetTeam, rosterTeams) {
+  const needs = analyzeDraftNeeds(rosterTeams, targetTeam);
+  const need = needs.find(n => n.position === blockedPlayer.position);
+
+  let interestScore = 0;
+  if (need) interestScore += need.severity === 'critical' ? 55 : need.severity === 'moderate' ? 32 : 14;
+
+  const skill = blockedPlayer.skill || 0;
+  // Raw-quality interest ("he's just good") only makes sense relative to
+  // what the team already has - a team that already has a comparable or
+  // better player at that position has little real reason to want
+  // ANOTHER one just because he's talented (confirmed a real gap here:
+  // teams with elite kickers were showing strong interest in trading for
+  // another elite kicker, which doesn't hold up).
+  const ownBest = (targetTeam.player || []).filter(p => p.position === blockedPlayer.position && p.skill != null)
+    .reduce((max, p) => Math.max(max, p.skill), 0);
+  const upgradeMargin = skill - ownBest;
+  if (upgradeMargin > 0) interestScore += Math.min(upgradeMargin, 25) * 1.4;
+
+  const popularity = blockedPlayer.popularity != null ? blockedPlayer.popularity : 50;
+  if (popularity >= 80) interestScore += (popularity - 80) * 1.8; // "sell a name to their fans," independent of play
+
+  return { interested: interestScore >= 28, interestScore, need };
+}
+
+// The give-back scales with how desperate the target team is - a team
+// with only a mild need offers their worst piece at that position; a
+// genuinely desperate team can offer someone real, even a near-starter.
+// Never their single best player at the position, to avoid a team
+// gutting itself in one trade.
+function pickTradeBlockGiveBack(targetTeam, position, need) {
+  const candidates = (targetTeam.player || [])
+    .filter(p => p.position === position && p.skill != null)
+    .sort((a, b) => a.skill - b.skill);
+  if (!candidates.length) return null;
+  const severity = need ? need.severity : null;
+  let percentile;
+  if (severity === 'critical') percentile = 0.65;
+  else if (severity === 'moderate') percentile = 0.35;
+  else percentile = 0; // no real need, or just interested on quality/popularity - their worst piece
+  const idx = Math.min(candidates.length - 1, Math.max(0, Math.floor((candidates.length - 1) * percentile)));
+  return candidates[idx];
+}
+
+// Caps how many Trading Block offers a team can have open league-wide at
+// once, scaled by their live cap situation - same shape as Free Agency's
+// maxNewOffers, so an already cap-strapped team isn't shown chasing
+// offers on five different players simultaneously.
+function computeTradeBlockOfferCap(team, rosterTeams) {
+  const cap = computeSigningCap(team, rosterTeams, null);
+  if (!cap) return 3;
+  if (cap.percentile >= 0.90) return 0;
+  if (cap.percentile >= 0.75) return 1;
+  if (cap.percentile >= 0.50) return 2;
+  return 4;
+}
+
+// Trading Block is open from the start of the season through week 8,
+// closed the rest of the season, and reopens in the off-season - same
+// window we agreed for Trade Machine execution generally.
+function isTradeBlockOpen(scheduleRows) {
+  const offSeason = isOffSeason(scheduleRows);
+  if (offSeason == null) return true; // no schedule loaded - default open rather than block the feature
+  if (offSeason === true) return true;
+  const year = getCurrentYear(scheduleRows);
+  const week = year != null ? getCurrentWeek(scheduleRows, year) : null;
+  if (week == null) return true;
+  return week <= 8;
+}
+
+let tradeBlockState = null; // { slots: {tid: [pid,...]}, offers: {pid: [...]}, completedCount: {tid: N}, seasonYear: N }
+function getTradeBlockState() {
+  if (!tradeBlockState) tradeBlockState = { slots: {}, offers: {}, completedCount: {}, seasonYear: null };
+  // Detect a new season and reset the completed-trade count - the limit
+  // is meant to stop someone from cycling their whole roster through the
+  // Block in ONE season, not a permanent lifetime cap. A fresh season is
+  // a fresh 4 slots.
+  const currentYear = lastScheduleRows ? getCurrentYear(lastScheduleRows) : null;
+  const validYear = currentYear != null && !Number.isNaN(currentYear);
+  if (validYear && tradeBlockState.seasonYear !== currentYear) {
+    tradeBlockState.completedCount = {};
+    tradeBlockState.seasonYear = currentYear;
+  }
+  return tradeBlockState;
+}
+function getTradeBlockMaxSlots(team) {
+  const state = getTradeBlockState();
+  const tid = Math.round(team.tid);
+  const completed = state.completedCount[tid] || 0;
+  return Math.max(0, 4 - completed);
+}
+function getTradeBlockSlots(team) {
+  const state = getTradeBlockState();
+  const tid = Math.round(team.tid);
+  if (!state.slots[tid]) state.slots[tid] = [];
+  return state.slots[tid];
+}
+function addToTradeBlock(team, pid) {
+  const slots = getTradeBlockSlots(team);
+  const maxSlots = getTradeBlockMaxSlots(team);
+  if (slots.length >= maxSlots || slots.includes(String(pid))) return false;
+  slots.push(String(pid));
+  return true;
+}
+function removeFromTradeBlock(team, pid) {
+  const slots = getTradeBlockSlots(team);
+  const idx = slots.indexOf(String(pid));
+  if (idx === -1) return false;
+  slots.splice(idx, 1);
+  delete getTradeBlockState().offers[String(pid)];
+  return true;
+}
+// Called only when a Block-listed player is actually traded away
+// (accepted offer) - permanently costs the team a slot for the rest of
+// the season, distinct from just removing them from the block (which
+// happens for ANY removal, including just changing your mind).
+function consumeTradeBlockSlot(team) {
+  const state = getTradeBlockState();
+  const tid = Math.round(team.tid);
+  state.completedCount[tid] = (state.completedCount[tid] || 0) + 1;
+}
+
+// Scans every other team for interest in one blocked player. Offers are
+// PERMANENT once made - a team that's already made an offer is never
+// re-checked or re-rolled, so spamming this button can only surface NEW
+// interest from teams that haven't weighed in yet, never improve an
+// existing offer. That's deliberate: it closes the obvious exploit of
+// re-rolling for a better deal.
+function callAroundForPlayer(blockedPid, myTeam, rosterTeams) {
+  const state = getTradeBlockState();
+  let player = null;
+  for (const t of rosterTeams) {
+    const p = (t.player || []).find(pl => String(pl.pid) === String(blockedPid));
+    if (p) { player = p; break; }
+  }
+  if (!player) return;
+
+  if (!state.offers[blockedPid]) state.offers[blockedPid] = [];
+  const alreadyOfferedTids = new Set(state.offers[blockedPid].map(o => o.fromTid));
+  const allOffers = Object.values(state.offers).flat();
+
+  rosterTeams.forEach(t => {
+    const tid = Math.round(t.tid);
+    if (tid === Math.round(myTeam.tid) || alreadyOfferedTids.has(tid)) return;
+
+    const offerCap = computeTradeBlockOfferCap(t, rosterTeams);
+    const currentOfferCount = allOffers.filter(o => o.fromTid === tid).length;
+    if (currentOfferCount >= offerCap) return;
+
+    const { interested, need } = computeTradeBlockInterest(player, t, rosterTeams);
+    if (!interested) return;
+
+    const giveBack = pickTradeBlockGiveBack(t, player.position, need);
+    if (!giveBack) return;
+
+    state.offers[blockedPid].push({ fromTid: tid, fromTeam: t, offeredPid: String(giveBack.pid), offeredPlayer: giveBack });
+  });
+}
+
+// What other teams around the league would plausibly want to shed,
+// filtered down to only positions where the user's OWN team has a real
+// need - the "browsable" version stays digestible (a handful of
+// relevant players, not all 32 teams' full rosters) without needing any
+// persisted per-team block state for the other 31 teams.
+function computeRumorMill(myTeam, rosterTeams) {
+  const myNeeds = analyzeDraftNeeds(rosterTeams, myTeam);
+  const neededPositions = new Set(myNeeds.map(n => n.position));
+  const baseline = buildTradeBlockSalaryBaseline(rosterTeams);
+
+  const candidates = [];
+  rosterTeams.forEach(t => {
+    if (Math.round(t.tid) === Math.round(myTeam.tid)) return;
+    (t.player || []).forEach(p => {
+      if (p.skill == null || !neededPositions.has(p.position)) return;
+      const { score, reasons } = computeSheddabilityScore(p, t.player, baseline);
+      if (score > 15) candidates.push({ score, team: t, player: p, reasons });
+    });
+  });
+  candidates.sort((a, b) => b.score - a.score);
+  return candidates.slice(0, 15);
 }
 
 function computeLegendBowlPowerRankings(rosterTeams) {
@@ -8299,6 +8576,7 @@ function renderTradeMachine() {
     <div id="trade-warning" class="trade-warning"></div>
     <button class="load-btn ready" id="trade-generate-btn">Execute Trade</button>
     <div id="trade-status"></div>
+    <div id="trade-block-section" style="margin-top:24px;"></div>
   `;
 
   const teamASel = document.getElementById('trade-team-a');
@@ -8430,6 +8708,136 @@ function renderTradeMachine() {
     document.getElementById('trade-status').textContent = lastTradeConfirmation;
   }
   refreshPlayerA();
+  renderTradeBlockSection();
+}
+
+function renderTradeBlockSection() {
+  const container = document.getElementById('trade-block-section');
+  if (!container || !lastRosterTeams) return;
+
+  const myCoachedTeam = getMyCoachedTeam();
+  const myTeam = myCoachedTeam ? lastRosterTeams.find(t => Math.round(t.tid) === myCoachedTeam.tid) : null;
+  if (!myTeam) {
+    container.innerHTML = `
+      <div class="aa-column-title">TRADING BLOCK</div>
+      <div class="predict-disclaimer" style="border-left-color:#FF9F40;">Load career_data.txt so we know which team is yours - the Trading Block is locked to your real coached team, same as Free Agency, to avoid running it for the wrong roster.</div>
+    `;
+    return;
+  }
+
+  const open = isTradeBlockOpen(lastScheduleRows);
+  if (!open) {
+    container.innerHTML = `
+      <div class="aa-column-title">TRADING BLOCK</div>
+      <div class="predict-disclaimer">Closed for the season - the Trading Block only runs from the start of the season through week 8, then reopens in the off-season. Think of "block" like a market stall, not a roadblock: it's where you list players for other teams to bid on, and that window has passed for this year.</div>
+    `;
+    return;
+  }
+
+  const slots = getTradeBlockSlots(myTeam);
+  const state = getTradeBlockState();
+  const brand = singleTeamBranding(myTeam.cityabbr);
+  const maxSlots = getTradeBlockMaxSlots(myTeam);
+  const completedThisSeason = state.completedCount[Math.round(myTeam.tid)] || 0;
+
+  const TRADE_BLOCK_POSITION_ORDER = [...DRAFT_PREP_OFFENSE_POSITIONS, ...DRAFT_PREP_DEFENSE_POSITIONS];
+  const myAvailablePlayers = (myTeam.player || [])
+    .filter(p => p.skill != null && !slots.includes(String(p.pid)))
+    .sort((a, b) => {
+      const posDiff = TRADE_BLOCK_POSITION_ORDER.indexOf(a.position) - TRADE_BLOCK_POSITION_ORDER.indexOf(b.position);
+      if (posDiff !== 0) return posDiff;
+      return (b.skill || 0) - (a.skill || 0);
+    });
+
+  const slotHtml = Array.from({ length: maxSlots }, (_, i) => i).map(i => {
+    const pid = slots[i];
+    if (!pid) {
+      const options = myAvailablePlayers.map(p => `<option value="${esc(p.pid)}">${esc(p.fname)} ${esc(p.lname)} (${esc(p.position)}, ${esc(Math.round(p.skill || 0))} SKL)</option>`).join('');
+      return `<div class="dp-group" style="padding:10px; margin-bottom:8px;">
+        <div class="card-picker" style="margin:0;">
+          <select id="trade-block-add-select-${i}" style="flex:1 1 220px;">${options || '<option>No players available</option>'}</select>
+          <button class="load-btn" data-tb-add-slot="${i}">List on Block</button>
+        </div>
+      </div>`;
+    }
+    const player = (myTeam.player || []).find(p => String(p.pid) === pid);
+    if (!player) return '';
+    const offers = state.offers[pid] || [];
+    const offersHtml = offers.length ? offers.map(o => `
+      <div class="dp-row" style="cursor:default;">
+        <span class="dp-name">${esc(o.fromTeam.city)} offers ${esc(o.offeredPlayer.fname)} ${esc(o.offeredPlayer.lname)} (${esc(o.offeredPlayer.position)}, ${esc(Math.round(o.offeredPlayer.skill || 0))} SKL)</span>
+        <button class="load-btn ready" data-tb-accept-pid="${esc(pid)}" data-tb-accept-tid="${esc(o.fromTid)}" style="flex:0 0 auto;">Accept</button>
+      </div>`).join('') : '<div class="empty-note">No offers yet - try Call Around.</div>';
+    return `<div class="dp-group" style="padding:10px; margin-bottom:8px;">
+      <div class="dp-row" style="cursor:default;">
+        <span class="dp-name" style="font-weight:700;">${esc(player.fname)} ${esc(player.lname)} (${esc(player.position)}, ${esc(Math.round(player.skill || 0))} SKL, $${esc((Number(player.salary) || 0).toFixed(1))}M)</span>
+        <button class="load-btn" data-tb-call-pid="${esc(pid)}" style="flex:0 0 auto;">Call Around</button>
+        <button class="load-btn" data-tb-remove-pid="${esc(pid)}" style="flex:0 0 auto;">Remove</button>
+      </div>
+      ${offersHtml}
+    </div>`;
+  }).join('');
+
+  const rumors = computeRumorMill(myTeam, lastRosterTeams);
+  const rumorHtml = rumors.length ? rumors.map(r => {
+    const rb = singleTeamBranding(r.team.cityabbr);
+    return `<div class="dp-row" style="cursor:default;">
+      <span class="fa-team-bubble" style="background:${rb.primary}; color:${rb.secondary};">${esc(r.team.cityabbr)}</span>
+      <span class="dp-name">${esc(r.player.fname)} ${esc(r.player.lname)} (${esc(r.player.position)}, ${esc(Math.round(r.player.skill || 0))} SKL, $${esc((Number(r.player.salary) || 0).toFixed(1))}M)</span>
+      <span class="fa-stats-cell" style="flex:1 1 auto; white-space:normal; overflow:visible;">${esc(r.reasons[0] || '')}</span>
+    </div>`;
+  }).join('') : '<div class="empty-note">Nothing surfaced right now that both matches a need of yours and looks sheddable elsewhere.</div>';
+
+  container.innerHTML = `
+    <div class="aa-column-title">TRADING BLOCK</div>
+    <div class="predict-disclaimer">List up to 4 players (backups, bad contracts, anyone you'd move) - "Call Around" checks the other 31 teams for real interest. Offers are permanent once made: calling around again only surfaces NEW interest, it never re-rolls or improves an offer you already have. Execution is the same strict position-for-position swap as the trade builder above. Open through week 8, closed the rest of the season, reopens in the off-season. <strong style="color:${completedThisSeason > 0 ? '#FFC93C' : 'var(--muted)'};">Each completed trade permanently costs a slot for the rest of THIS season - ${esc(completedThisSeason)} of 4 used so far, ${esc(maxSlots)} remaining. Resets fresh next season.</strong></div>
+    <div class="fa-col-banner" style="background:${brand.primary}; color:${brand.secondary}; margin-top:10px;">${esc(myTeam.city)} ${esc(myTeam.name)}'s Block</div>
+    <div style="margin-top:10px;">${maxSlots > 0 ? slotHtml : '<div class="empty-note">All 4 slots used for this season - the Block reopens fresh once the off-season starts.</div>'}</div>
+
+    <div class="aa-column-title" style="margin-top:20px;">RUMOR MILL</div>
+    <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Players around the league who both look sheddable to their own team AND match one of your real needs - not a browsable list of all 32 teams, just what's actually relevant to you.</p>
+    <div class="dp-group">${rumorHtml}</div>
+  `;
+
+  container.querySelectorAll('[data-tb-add-slot]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const idx = btn.dataset.tbAddSlot;
+      const sel = document.getElementById(`trade-block-add-select-${idx}`);
+      if (sel && sel.value) {
+        addToTradeBlock(myTeam, sel.value);
+        renderTradeBlockSection();
+      }
+    });
+  });
+  container.querySelectorAll('[data-tb-remove-pid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      removeFromTradeBlock(myTeam, btn.dataset.tbRemovePid);
+      renderTradeBlockSection();
+    });
+  });
+  container.querySelectorAll('[data-tb-call-pid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      callAroundForPlayer(btn.dataset.tbCallPid, myTeam, lastRosterTeams);
+      renderTradeBlockSection();
+    });
+  });
+  container.querySelectorAll('[data-tb-accept-pid]').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const blockedPid = btn.dataset.tbAcceptPid;
+      const fromTid = Number(btn.dataset.tbAcceptTid);
+      const offers = getTradeBlockState().offers[blockedPid] || [];
+      const offer = offers.find(o => o.fromTid === fromTid);
+      if (!offer) return;
+      try {
+        rosterText = swapPlayersInRosterText(rosterText, blockedPid, offer.offeredPid);
+        removeFromTradeBlock(myTeam, blockedPid);
+        consumeTradeBlockSlot(myTeam);
+        tryBuild();
+      } catch (e) {
+        showError('Trading Block swap failed: ' + e.message);
+      }
+    });
+  });
 }
 
 function renderCoachsCorner() {
