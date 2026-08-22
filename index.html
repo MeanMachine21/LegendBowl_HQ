@@ -178,18 +178,18 @@
 
   .scorebug-toggle-row { text-align: center; margin: 4px 0; }
   .season-timeline {
-    display: none; margin: 10px auto 8px; max-width: 900px;
-    overflow-x: auto; white-space: nowrap; -webkit-overflow-scrolling: touch;
+    display: none; margin: 10px auto 8px;
+    -webkit-overflow-scrolling: touch;
     background: linear-gradient(180deg, var(--metal-2) 0%, var(--metal-3) 100%);
     border-top: 1px solid var(--metal-1); border-left: 1px solid var(--metal-1);
     border-right: 1px solid var(--metal-5); border-bottom: 1px solid var(--metal-5);
-    border-radius: 6px; padding: 6px 10px;
+    border-radius: 6px; padding: 10px 14px;
   }
-  .season-timeline.visible { display: block; }
+  .season-timeline.visible { display: flex; justify-content: space-between; align-items: center; }
   .timeline-stop {
-    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
-    letter-spacing: 0.5px; color: var(--muted); padding: 4px 6px; margin: 0 1px; border-radius: 3px;
-    cursor: default;
+    display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 15px; font-weight: 700;
+    letter-spacing: 0.5px; color: var(--muted); padding: 6px 4px; border-radius: 3px;
+    cursor: default; text-align: center; flex: 1 1 0;
   }
   .timeline-stop.current {
     color: #0a0a0a; background: var(--lcd-green); box-shadow: 0 0 6px 1px rgba(57,255,106,0.6);
@@ -589,7 +589,7 @@
   .summary-sheet p:last-child { margin-bottom: 0; }
   .summary-disclaimer { color: var(--muted); font-size: 12px; font-weight: 600; margin-top: 10px; }
 
-  .empty-note { color: var(--muted); font-size: 15px; padding: 20px 0; text-align: center; font-weight: 600; }
+  .empty-note { color: var(--muted); font-size: 15px; padding: 6px 0; text-align: center; font-weight: 600; }
 
   /* ---- Player modal ---- */
   .modal-backdrop {
@@ -694,6 +694,7 @@
   }
   .fa-cut-undo:hover { color: #39FF6A; border-color: #39FF6A; }
   .fa-notes-icons { flex: 0 0 56px; text-align: center; font-size: 15px; letter-spacing: 1px; }
+  .fa-stats-cell { font-family: 'IBM Plex Mono', monospace; font-size: 11px; color: var(--lcd-green); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .fa-team-bubble {
     display: inline-block; font-family: 'IBM Plex Mono', monospace; font-size: 10px; font-weight: 700;
     padding: 2px 6px; border-radius: 10px; line-height: 1.3; min-width: 30px; text-align: center;
@@ -714,7 +715,7 @@
   .player-link:hover { opacity: 0.75; }
 
   /* ---- Team Card / Matchup Card ---- */
-  .card-picker { max-width: 620px; margin: 0 auto 18px; display: flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+  .card-picker { display: flex; gap: 12px; flex-wrap: wrap; justify-content: flex-start; margin-bottom: 18px; }
   .card-picker select {
     flex: 1; min-width: 200px; font-family: 'IBM Plex Mono', monospace; font-size: 13px; padding: 9px 10px;
     background: var(--lcd-bg); color: var(--lcd-green); border: 1px solid var(--metal-2); border-radius: 4px;
@@ -1141,7 +1142,7 @@
 <body>
 
 <div class="titlebar">
-  <div class="name">LB_RECAP v65</div>
+  <div class="name">LB_RECAP v70</div>
   <div class="eq"><span></span><span></span><span></span><span></span><span></span></div>
   <div class="dots"><span></span><span></span><span></span></div>
 </div>
@@ -2113,6 +2114,61 @@ function hasRealPlayerStats(ps) {
     'stat_punt_gross_yards', 'stat_kick_pts', 'stat_punt_return_yards', 'stat_kick_return_yards'];
   return fields.some(f => (Number(ps[f]) || 0) > 0);
 }
+
+// Finds a player's own most recent season with real recorded stats -
+// works whether the league is mid-season (shows the current year once
+// games exist) or in the off-season (falls through to last year's real
+// totals, since the fresh year's entry is empty until games are played).
+function getPlayerLatestRealSeasonStats(player) {
+  const entries = (player.player_stats || []).filter(ps => ps.year != null && hasRealPlayerStats(ps));
+  if (!entries.length) return null;
+  return entries.reduce((latest, ps) => (ps.year > latest.year ? ps : latest), entries[0]);
+}
+
+const FA_OL_POSITIONS = new Set(['LT', 'LG', 'C', 'RG', 'RT']);
+const FA_DEFENSE_POSITIONS = new Set(['LDE', 'RDE', 'LDT', 'RDT', 'OLB', 'ILB', 'CB', 'FS', 'SS']);
+
+// Position-specific season stat line. Legend Bowl tracks zero individual
+// stats for offensive linemen (confirmed directly - their player_stats
+// entries contain only cityabbr/year/tid, nothing else), so O-line shows
+// the team's real rush/pass yards instead - the same number for every
+// lineman on that team, which is a real data limitation, not a display
+// choice.
+function formatFaSeasonStats(player, team) {
+  const pos = player.position;
+  const n = v => Math.round(Number(v) || 0);
+  const pct = v => (Number(v) || 0).toFixed(1);
+
+  if (FA_OL_POSITIONS.has(pos)) {
+    const ts = team ? getLatestTeamStats(team) : null;
+    if (!ts) return '-';
+    return `Team: ${n(ts.stat_rush_yards)} rush yds, ${n(ts.stat_pass_yards)} pass yds`;
+  }
+
+  const ps = getPlayerLatestRealSeasonStats(player);
+  if (!ps) return '-';
+
+  if (pos === 'QB') {
+    return `${n(ps.stat_pass_completions)}/${n(ps.stat_pass_attempts)}, ${n(ps.stat_pass_yards)} yds, ${n(ps.stat_pass_tds)} TD, ${n(ps.stat_pass_ints)} INT, ${pct(ps.stat_pass_completion_perc)}%`;
+  }
+  if (pos === 'HB' || pos === 'FB') {
+    return `${n(ps.stat_rush_attempts)} att, ${n(ps.stat_rush_yards)} yds, ${n(ps.stat_rush_tds)} TD | ${n(ps.stat_receiving_receptions)} rec, ${n(ps.stat_receiving_yards)} yds, ${n(ps.stat_receiving_tds)} TD`;
+  }
+  if (pos === 'WR' || pos === 'TE') {
+    return `${n(ps.stat_receiving_receptions)} rec, ${n(ps.stat_receiving_yards)} yds, ${n(ps.stat_receiving_tds)} TD`;
+  }
+  if (FA_DEFENSE_POSITIONS.has(pos)) {
+    return `${n(ps.stat_defense_tackles)} tck, ${n(ps.stat_defense_tackles_for_loss)} TFL, ${n(ps.stat_defense_sacks)} sk, ${n(ps.stat_defense_int)} INT`;
+  }
+  if (pos === 'K') {
+    return `${n(ps.stat_kick_fg_made)}/${n(ps.stat_kick_fg_attempts)} FG (${pct(ps.stat_kick_fg_perc)}%), ${n(ps.stat_kick_xp_made)}/${n(ps.stat_kick_xp_attempts)} XP`;
+  }
+  if (pos === 'P') {
+    return `${n(ps.stat_punt_count)} punts, ${pct(ps.stat_punt_gross_avg)} avg, ${pct(ps.stat_punt_net_avg)} net, ${n(ps.stat_punt_long)} lg`;
+  }
+  return '-';
+}
+
 
 function getLatestPlayerStatsYear(rosterTeams) {
   let maxYear = null;
@@ -6026,10 +6082,11 @@ function renderStandings(container, rosterTeams, powerRankings) {
   container.innerHTML = `
     <div class="aa-column-title" style="margin-top:10px;">LEAGUE STANDINGS</div>
     <div class="card-picker" style="margin: 8px 0 12px;">
-      <button class="load-btn ready" id="standings-conf-0-btn">${esc(confLabel[0])}</button>
-      <button class="load-btn" id="standings-conf-1-btn">${esc(confLabel[1])}</button>
+      <button class="load-btn ready" id="standings-conf-0-btn" style="display:none;">${esc(confLabel[0])}</button>
+      <button class="load-btn" id="standings-conf-1-btn" style="display:none;">${esc(confLabel[1])}</button>
+      <button class="load-btn" id="standings-collapse-btn" title="Show the standings tables above the bracket">Show Standings</button>
     </div>
-    <div id="standings-tables">${renderConference(0)}</div>
+    <div id="standings-tables" style="display:none;">${renderConference(0)}</div>
   `;
   document.getElementById('standings-conf-0-btn').addEventListener('click', () => {
     document.getElementById('standings-tables').innerHTML = renderConference(0);
@@ -6040,6 +6097,15 @@ function renderStandings(container, rosterTeams, powerRankings) {
     document.getElementById('standings-tables').innerHTML = renderConference(1);
     document.getElementById('standings-conf-1-btn').classList.add('ready');
     document.getElementById('standings-conf-0-btn').classList.remove('ready');
+  });
+  document.getElementById('standings-collapse-btn').addEventListener('click', () => {
+    const tablesEl = document.getElementById('standings-tables');
+    const btn = document.getElementById('standings-collapse-btn');
+    const collapsed = tablesEl.style.display === 'none';
+    tablesEl.style.display = collapsed ? '' : 'none';
+    document.getElementById('standings-conf-0-btn').style.display = collapsed ? '' : 'none';
+    document.getElementById('standings-conf-1-btn').style.display = collapsed ? '' : 'none';
+    btn.textContent = collapsed ? 'Hide Standings' : 'Show Standings';
   });
 }
 
@@ -6489,7 +6555,7 @@ function renderStatLeaders() {
     </div>
     <div id="statleaders-deepdive"></div>
 
-    <div class="aa-column-title" style="margin-top:20px;">AT A GLANCE</div>
+    <div class="aa-column-title" style="margin-top:14px;">AT A GLANCE</div>
     <div class="aa-columns">
       <div class="aa-column">
         <div class="aa-column-title">OFFENSE / RETURNS</div>
@@ -7033,7 +7099,7 @@ function renderSchedulePreview(cityabbr, year) {
       </div>
     </div>
 
-    <div class="aa-column-title" style="margin-top:20px;">SAVE THIS SCHEDULE</div>
+    <div class="aa-column-title" style="margin-top:14px;">SAVE THIS SCHEDULE</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Downloads a schedule.txt for Year ${esc(year)}, formatted exactly like the game's own export - every game shows -1/-1 for scores (unplayed), matching a fresh, not-yet-started season.</p>
     <button class="load-btn ready" id="schedule-download-btn">Download schedule.txt</button>
     <div class="p-note" id="schedule-export-status" style="margin-top:8px;"></div>
@@ -7389,7 +7455,7 @@ function renderFaRosterView(cityabbr) {
       const rowTitle = isStillUfa ? 'Still an unresolved free agent - hasn\'t been re-signed yet' : isNewArrival ? 'New arrival from elsewhere in the league this cycle' : (isReSigned ? 'Re-signed with your team this cycle' : '');
       return `<div class="dp-row" style="${rowStyle}" title="${rowTitle}">
         <span class="dp-pos">${esc(pos)}</span>
-        <span class="dp-name">${prefix}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
+        <span class="dp-name">${prefix}${esc(p.fname || '')} ${esc(p.lname)}</span>
         <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
         <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
         <span class="dp-stat" style="color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
@@ -7492,7 +7558,7 @@ function renderFaSimMode(resultEl, team, capHtml) {
           downloadTextFile(result.hofText, 'hof.txt', 'text/plain');
           rosterText = result.rosterText;
           hofText = result.hofText;
-          if (statusEl) statusEl.textContent = 'Downloaded hof.txt with award references updated for any traded Hall of Famers.';
+          if (statusEl) statusEl.textContent = 'Downloaded hof.txt with award references updated for any Hall of Famers who changed teams.';
           setTimeout(tryBuild, 50);
         } catch (e) {
           if (statusEl) { statusEl.textContent = 'Export failed safety check, so nothing was downloaded: ' + e.message; statusEl.style.color = '#FF4D4D'; }
@@ -7684,17 +7750,18 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
       : esc(t.cityabbr);
     return `
     <div class="dp-row fa-offer-row" data-fa-key="${esc(keyPrefix)}" data-fa-idx="${i}" style="cursor:pointer;">
-      <span class="dp-pos">${esc(p.position)}</span>
-      <span class="dp-name${nameClass}" style="flex:0 1 190px; max-width:190px;" title="${nameTitle}">${threat ? '\u26A0 ' : ''}${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
-      <span class="dp-age">${esc(Math.round(p.age))}</span>
-      <span class="dp-stat" style="flex:1 1 40px; color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
-      <span class="dp-stat" style="flex:1 1 40px; color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
-      <span class="dp-stat" style="flex:1 1 40px; color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
-      <span class="dp-stat" style="flex:1 1 40px; color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
-      ${showFrom ? `<span class="dp-age" style="flex:0 0 34px; ${colorizeFrom ? 'display:flex; justify-content:center;' : ''}">${fromCell}</span>` : ''}
-      <span class="dp-sal" style="flex:0 0 60px;">$${esc(ask.askSalary.toFixed(1))}M</span>
-      <span class="dp-cnt" style="flex:0 0 30px;">${esc(ask.askYears)}Y</span>
-      <span class="dp-age" style="flex:0 0 30px; color:${arrow.color}; font-weight:800; text-align:center;" title="${esc(arrow.label)}">${arrow.symbol}</span>
+      <span class="dp-pos" style="flex:0 0 22px;">${esc(p.position)}</span>
+      <span class="dp-name${nameClass}" style="flex:0 1 195px; max-width:195px;" title="${nameTitle}">${threat ? '\u26A0 ' : ''}${esc(p.fname || '')} ${esc(p.lname)}</span>
+      <span class="fa-stats-cell" style="flex:1 1 400px;">${esc(formatFaSeasonStats(p, t))}</span>
+      <span class="dp-age" style="flex:0 0 22px;">${esc(Math.round(p.age))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.agility || 0))};">${esc(Math.round(p.agility || 0))}</span>
+      <span class="dp-stat" style="flex:0 0 30px; color:${getHeatColorForOvr(Math.round(p.strength || 0))};">${esc(Math.round(p.strength || 0))}</span>
+      ${showFrom ? `<span class="dp-age" style="flex:0 0 32px; ${colorizeFrom ? 'display:flex; justify-content:center;' : ''}">${fromCell}</span>` : ''}
+      <span class="dp-sal" style="flex:0 0 55px;">$${esc(ask.askSalary.toFixed(1))}M</span>
+      <span class="dp-cnt" style="flex:0 0 26px;">${esc(ask.askYears)}Y</span>
+      <span class="dp-age" style="flex:0 0 24px; color:${arrow.color}; font-weight:800; text-align:center;" title="${esc(arrow.label)}">${arrow.symbol}</span>
       <span class="fa-notes-icons" title="${esc(noteTitle)}">${ask.isTopTier ? '\u2B50' : ''}${hofAwards.length ? '\uD83C\uDFC6' : ''}${ask.teamFriendly ? '\uD83E\uDD1D' : ''}</span>
       ${actionButtons}
     </div>`;
@@ -7705,12 +7772,13 @@ function buildFaBoardHtml(entries, team, totalCount, opts) {
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">${note}</p>
     <div class="dp-group" style="max-height:500px; overflow-y:auto;">
       <div class="dp-row dp-header">
-        ${faSortHeaderCell('Pos', 'pos', 'flex:0 0 28px;')}${faSortHeaderCell('Name', 'name', 'flex:0 1 190px; max-width:190px;')}
-        ${faSortHeaderCell('Age', 'age', 'flex:0 0 24px; text-align:right;')}
-        ${faSortHeaderCell('SKL', 'skill', 'flex:1 1 40px;')}${faSortHeaderCell('SPD', 'speed', 'flex:1 1 40px;')}${faSortHeaderCell('AGL', 'agility', 'flex:1 1 40px;')}${faSortHeaderCell('STR', 'strength', 'flex:1 1 40px;')}
-        ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 34px;') : ''}
-        ${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 60px;')}
-        ${faSortHeaderCell('Yrs', 'years', 'flex:0 0 30px;')}${faSortHeaderCell('Int', 'interest', 'flex:0 0 30px; text-align:center;')}<span class="dp-age" style="flex:0 0 56px; text-align:center;">\u2B50\uD83C\uDFC6\uD83E\uDD1D</span>
+        ${faSortHeaderCell('Pos', 'pos', 'flex:0 0 22px;')}${faSortHeaderCell('Name', 'name', 'flex:0 1 195px; max-width:195px;')}
+        <span class="dp-age" style="flex:1 1 400px; text-align:left;">Stats</span>
+        ${faSortHeaderCell('Age', 'age', 'flex:0 0 22px; text-align:right;')}
+        ${faSortHeaderCell('SKL', 'skill', 'flex:0 0 30px;')}${faSortHeaderCell('SPD', 'speed', 'flex:0 0 30px;')}${faSortHeaderCell('AGL', 'agility', 'flex:0 0 30px;')}${faSortHeaderCell('STR', 'strength', 'flex:0 0 30px;')}
+        ${showFrom ? faSortHeaderCell('From', 'from', 'flex:0 0 32px;') : ''}
+        ${faSortHeaderCell('Ask $/Yr', 'ask', 'flex:0 0 55px;')}
+        ${faSortHeaderCell('Yrs', 'years', 'flex:0 0 26px;')}${faSortHeaderCell('Int', 'interest', 'flex:0 0 24px; text-align:center;')}<span class="dp-age" style="flex:0 0 56px; text-align:center;">\u2B50\uD83C\uDFC6\uD83E\uDD1D</span>
         ${state ? '<span class="dp-age" style="flex:0 0 108px;">Quick</span>' : ''}
       </div>
       ${rows || '<div class="empty-note" style="padding:10px;">None right now.</div>'}
@@ -7917,7 +7985,7 @@ function buildFaFinalRecapHtml(state, team) {
       <div class="fa-breaking-news-label">\uD83D\uDCF0 BREAKING NEWS</div>
       ${exportPreview.hofTradeNews.map(({ awards }) => {
         const topAward = awards[0];
-        return `<div class="fa-breaking-news-item">A Hall of Famer has been traded! ${esc(topAward.name || '')} (${esc(topAward.trophy)}, Year ${esc(topAward.year)}) is on the move.</div>`;
+        return `<div class="fa-breaking-news-item">A Hall of Famer is changing teams! ${esc(topAward.name || '')} (${esc(topAward.trophy)}, Year ${esc(topAward.year)}) signed elsewhere in free agency.</div>`;
       }).join('')}
     </div>
   ` : '';
@@ -7948,7 +8016,7 @@ function buildFaFinalRecapHtml(state, team) {
   ` : '';
 
   const saveSectionHtml = `
-    <div class="aa-column-title" style="margin-top:20px;">SAVE YOUR CHANGES</div>
+    <div class="aa-column-title" style="margin-top:14px;">SAVE YOUR CHANGES</div>
     ${!rosterText ? `<p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Load the roster_user.json file itself (not just its data) alongside your other files to enable exporting - this planner can only write back what it was originally given.</p>`
       : `<p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Not happy with how this went? Use "Start a New Simulation" below FIRST - once you download, treat it as final. Downloading writes real changes into a copy of your roster_user.json (and hof.txt, if loaded) using the same pid/tid-preserving swap logic as Trade Machine: everything about a player moves except their pid and tid, which stay fixed to the roster slot. Any Hall of Fame award history for a traded player is re-pointed to follow them, so it doesn't get misattributed to whoever's sitting in their old slot now.</p>`}
     ${rosterText ? `
@@ -7959,7 +8027,7 @@ function buildFaFinalRecapHtml(state, team) {
   `;
 
   return `
-    <div class="aa-column-title" style="margin-top:20px;">FREE AGENCY COMPLETE</div>
+    <div class="aa-column-title" style="margin-top:14px;">FREE AGENCY COMPLETE</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">All 5 rounds resolved. ${esc(state.eliteLockedIn.length)} elite player(s) never hit the open market. Any of your own pending free agents you never successfully retained (cap-blocked, offer-limit-blocked, or simply declined) were forced to leave at the end of round 5, balanced with a same-position player sent back the other way - so every team still has the exact same roster count at every position they started with. This is a planning result only - nothing here changed your actual save.</p>
     ${hofNewsHtml}
     ${storylinesHtml}
@@ -8020,7 +8088,7 @@ function renderDraftPrepResult(cityabbr) {
     if (!players.length) return '';
     const rows = players.map(p => `<div class="dp-row">
       <span class="dp-pos">${esc(pos)}</span>
-      <span class="dp-name">${esc(p.fname ? p.fname.charAt(0) + '.' : '')} ${esc(p.lname)}</span>
+      <span class="dp-name">${esc(p.fname || '')} ${esc(p.lname)}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForOvr(Math.round(p.skill || 0))};">${esc(Math.round(p.skill || 0))}</span>
       <span class="dp-stat" style="color:${getHeatColorForSpeedPercentile(Math.round(p.speed || 0), leagueSpeeds)};">${esc(Math.round(p.speed || 0))}</span>
@@ -8113,7 +8181,7 @@ function renderDraftPrepResult(cityabbr) {
 
   resultEl.innerHTML = `
     ${identityHtml}
-    <div class="aa-column-title" style="margin-top:20px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
+    <div class="aa-column-title" style="margin-top:14px;">DRAFT NEEDS - ${esc(needs.length)} POSITION${needs.length === 1 ? '' : 'S'} FLAGGED</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Sorted by positional importance first (Tier 1 → Tier 3, per Legend Bowl usage - not generic NFL value), then by severity within a tier. Rank badge in the corner of each card is that position group's own league-wide rank - an ESTIMATE from average roster skill, since the game's precise internal ranking isn't in the exported file. Tap a card for details.</p>
     <div class="dp-tier-editor-toggle" id="dp-tier-editor-toggle">\u2699 Customize Position Tiers</div>
     <div class="dp-tier-editor" id="dp-tier-editor" style="display:${tierEditorOpen ? 'block' : 'none'};">
@@ -8123,7 +8191,7 @@ function renderDraftPrepResult(cityabbr) {
     </div>
     <div class="draft-need-grid">${needs.map(needCard).join('') || '<div class="empty-note">No significant needs detected - roster looks solid across the board.</div>'}</div>
 
-    <div class="aa-column-title" style="margin-top:20px;">TEAM AVERAGES BY UNIT</div>
+    <div class="aa-column-title" style="margin-top:14px;">TEAM AVERAGES BY UNIT</div>
     <p class="empty-note" style="text-align:left; margin: 4px 0 10px;">Corner badge is the same computed league-wide skill estimate as above (1-32). Points/yards/kicking ranks are real, from this season's actual stats.</p>
     <div class="dp-unit-grid">
       ${unitCard('Offense', DP_UNIT_OFFENSE, offenseRankLines)}
@@ -8131,7 +8199,7 @@ function renderDraftPrepResult(cityabbr) {
       ${unitCard('Special Teams', DP_UNIT_SPECIAL, specialRankLines)}
     </div>
 
-    <div class="aa-column-title" style="margin-top:20px;">FULL ROSTER</div>
+    <div class="aa-column-title" style="margin-top:14px;">FULL ROSTER</div>
     <div class="dp-columns">
       <div class="dp-column">
         <div class="dp-column-title">OFFENSE</div>
@@ -8382,7 +8450,7 @@ function renderCoachsCorner() {
   const brand = cityabbr ? singleTeamBranding(cityabbr) : { primary: 'var(--panel)', secondary: 'var(--chalk)' };
 
   const historyHtml = history.length ? `
-    <div class="aa-column-title" style="margin-top:20px;">COACHING HISTORY</div>
+    <div class="aa-column-title" style="margin-top:14px;">COACHING HISTORY</div>
     <div class="aa-compact-group">
       ${history.map(s => `<div class="aa-compact-row"><span class="name">Year ${esc(s.year)} - ${esc(s.teamCity)} ${esc(s.teamName || '')}</span><span class="predict-record">${record(s.wins, s.losses)}</span></div>`).join('')}
     </div>
@@ -8393,7 +8461,7 @@ function renderCoachsCorner() {
   const currentTeam = lastRosterTeams ? lastRosterTeams.find(t => Math.round(t.tid) === current.tid) : null;
   const teamStatsEntry = currentTeam ? getLatestTeamStats(currentTeam) : null;
   const teamStatsHtml = teamStatsEntry ? `
-    <div class="aa-column-title" style="margin-top:20px;">TEAM STATS - SEASON ${esc(teamStatsEntry.year)}</div>
+    <div class="aa-column-title" style="margin-top:14px;">TEAM STATS - SEASON ${esc(teamStatsEntry.year)}</div>
     <div class="coach-stats-grid">
       ${statBlockWithRank('Points For', esc(teamStatsEntry.stat_total_pts ?? 0), computeTeamStatRank(lastRosterTeams, current.tid, 'stat_total_pts', true))}
       ${statBlockWithRank('Points Allowed', esc(teamStatsEntry.stat_total_pts_allowed ?? 0), computeTeamStatRank(lastRosterTeams, current.tid, 'stat_total_pts_allowed', false))}
